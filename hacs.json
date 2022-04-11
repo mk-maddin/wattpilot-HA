@@ -1,0 +1,5 @@
+{
+  "name": "Fronius Wattpilot-HA",
+  "iot_class": "Local Polling",
+  "homeassistant": "2022.4.2"
+}
