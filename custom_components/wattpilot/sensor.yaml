@@ -26,13 +26,20 @@ sensor:
     id: carConnected
     description: "State of the car plug - values are: 'no car', 'charging', 'ready','complete'"
     icon: "mdi:car-electric"
-    entity_category: diagnostic
 
   - source: attribute
     id: errorState
     name: ChargingState
     description: "Charging state of the car - values are: 'Unknown Error', 'Idle', 'Charging', 'Wait Car', 'Complete', 'Error'"
     icon: "mdi:state-machine"
+
+  - source: property
+    id: eto
+    name: "Totally Charged"
+    description: "Totally charged power"
+    icon: "mdi:ev-station"
+    device_class: power
+    unit_of_measurement: "Wh"
     entity_category: diagnostic
 
   - source: property
@@ -110,7 +117,7 @@ sensor:
     entity_category: diagnostic
 
   - source: property
-    id: rssi
+    id: tma
     name: "Charger Temp"
     description: "Temperature of the controller"
     icon: "mdi:thermometer"
@@ -136,10 +143,10 @@ sensor:
 
   - source: property
     id: wh
-    name: "Totally Charged"
-    description: "Totally charged power"
+    name: "Connection Charged"
+    description: "Energy in Wh since car connected"
     icon: "mdi:ev-station"
     device_class: power
-    unit_of_measurement: "W"
+    unit_of_measurement: "Wh"
     entity_category: diagnostic
 

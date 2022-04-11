@@ -26,7 +26,6 @@ switch:
     name: "Lock level selection"
     description: "Locks the button on the device so that changing the current level is not possible"
     icon: "mdi:account-cancel"
-    enabled: False
     invert: True
 
   - id: fap
