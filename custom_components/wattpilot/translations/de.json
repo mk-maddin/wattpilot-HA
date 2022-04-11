@@ -1,0 +1,44 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Nur eine Instanz dieser Konfiguration is erlaubt.",
+            "exception": "Es ist ein unbekannter Fehler aufgetreten - Bitte Logdateien prüfen.",
+            "not_supported": "Dieser workflow is leider noch nicht supportet. Bitte warte auf ein Versionsupdate."
+        },
+        "step": {
+            "charger": {
+                "data": {
+		    "friendly_name": "Name der Ladestation (nur Anzeigename)",
+ 		    "ip_address": "Lokale IP Adresse der Ladestation",
+                    "password": "Password für die lokale verbindung zur Ladestation",
+                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung",
+		    "cloud_api": "Aktiviere go-e Cloud API",
+		    "debug_properties": "Alle Wertänderungen loggen"
+                },
+                "title": "Ladestation konfigurieren",
+                "description": "Konfiguration"
+            }
+        }        
+    },
+    "options": {
+        "abort": {
+            "single_instance_allowed": "Nur eine Instanz dieser Konfiguration is erlaubt.",
+            "exception": "Es ist ein unbekannter Fehler aufgetreten - Bitte Logdateien prüfen.",
+            "not_supported": "Dieser workflow is leider noch nicht supportet. Bitte warte auf ein Versionsupdate."
+        },
+        "step": {
+            "charger": {
+                "data": {
+		    "friendly_name": "Name der Ladestation (nur Anzeigename)",
+ 		    "ip_address": "Lokale IP Adresse der Ladestation",
+                    "password": "Password für die lokale verbindung zur Ladestation",
+                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung",
+		    "cloud_api": "Aktiviere go-e Cloud API",
+		    "debug_properties": "Alle Wertänderungen loggen"
+                },
+                "title": "Ladestation konfigurieren",
+                "description": "Konfiguration"
+            }
+        }
+    }
+}

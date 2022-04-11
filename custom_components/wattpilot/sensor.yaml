@@ -1,0 +1,145 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding predefined sensors
+#   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
+
+sensor:
+
+#  - source: <property / attribute>
+#    id: <name of the charger attribute or prop to read>
+#    name: <optional: name of the sensor within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    device_class: <optional: key within HA>
+#    unit_of_measurement: <optional: key within HA>
+#    entity_category: <optional: key within HA>
+#    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
+#    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
+
+  - source: attribute
+    id: AccessState
+    description: "State of access for the charger - values are: 'open', 'locked', 'auto'"
+    icon: "mdi:lock-question"
+
+  - source: attribute
+    id: carConnected
+    description: "State of the car plug - values are: 'no car', 'charging', 'ready','complete'"
+    icon: "mdi:car-electric"
+    entity_category: diagnostic
+
+  - source: attribute
+    id: errorState
+    name: ChargingState
+    description: "Charging state of the car - values are: 'Unknown Error', 'Idle', 'Charging', 'Wait Car', 'Complete', 'Error'"
+    icon: "mdi:state-machine"
+    entity_category: diagnostic
+
+  - source: property
+    id: cci
+    name: "Inverter"
+    description: "Connected solar inverter"
+    icon: "mdi:solar-power"
+    entity_category: diagnostic
+    value_id: label
+    attribute_ids:
+      - paired
+      - model
+      - commonName
+      - ip
+      - connected
+      - status
+      - message
+
+  - source: property
+    id: ccw 
+    name: "WiFi Connection"
+    description: "WiFi connection information"
+    icon: "mdi:wifi"
+    entity_category: diagnostic
+    value_id: ssid
+    attribute_ids:
+      - ip
+      - netmask
+      - gw
+      - channel
+      - bssid
+
+  - source: property
+    id: loc
+    name: "Local Time"
+    description: "Local time on the charger"
+    icon: "mdi:clock-outline"
+    enabled: False
+    device_class: timestamp
+    entity_category: diagnostic
+
+  - source: property
+    id: qsw
+    name: "Webserver Queue"
+    description: "Queue size webserver/websocket"
+    icon: "mdi:web-sync"
+    enabled: False
+    entity_category: diagnostic
+
+  - source: property
+    id: rbc
+    name: "Reboot Counter"
+    description: "Counts the number of boot operations."
+    #icon: "mdi:web-sync"
+    enabled: False
+    entity_category: diagnostic
+
+  - source: property
+    id: rbt
+    name: "Reboot Timer"
+    description: "Counts the milliseconds since the last boot. Expires after 49 days, increasing the reboot_counter."
+    #icon: "mdi:web-sync"
+    enabled: False
+    unit_of_measurement: "ms"
+    entity_category: diagnostic
+
+  - source: property
+    id: rssi
+    name: "WiFi Signal"
+    description: "Signal strength of the connected WiFi"
+    icon: "mdi:wifi"
+    enabled: False
+    device_class: signal_strength
+    unit_of_measurement: "dB"
+    entity_category: diagnostic
+
+  - source: property
+    id: rssi
+    name: "Charger Temp"
+    description: "Temperature of the controller"
+    icon: "mdi:thermometer"
+    device_class: temperature
+    unit_of_measurement: "°C"
+    entity_category: diagnostic
+
+  - source: property
+    id: wcch
+    name: "HTTP Clients"
+    description: "Webserver connected clients as HTTP"
+    icon: "mdi:web-box"
+    enabled: False
+    entity_category: diagnostic
+
+  - source: property
+    id: wccw
+    name: "WEBSOCKET Clients"
+    description: "Webserver connected clients as WEBSOCKET"
+    icon: "mdi:web-box"
+    enabled: False
+    entity_category: diagnostic
+
+  - source: property
+    id: wh
+    name: "Totally Charged"
+    description: "Totally charged power"
+    icon: "mdi:ev-station"
+    device_class: power
+    unit_of_measurement: "W"
+    entity_category: diagnostic
+

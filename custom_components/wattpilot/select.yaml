@@ -1,0 +1,27 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding predefined sensors
+#   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
+
+select:
+
+#  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
+#    options_id: <id of the enum attribute which contains the options as values (not keys!) - this ALWAYS has to be a property, not attribute>
+#    name: <optional: name of the switch within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    entity_category: <optional: key within HA>
+
+  - id: lmo
+    options_id: lmoValues
+    name: "Charging Mode"
+    description: "Charging mode Default, Eco or Next Trip"
+    icon: "mdi:leaf"
+
+  - id: ust
+    options_id: ustValues
+    name: "Cable unlock"
+    description: "Lock cable when the car is connected (Normal), while the car is charging (AutoUnlock) or (AlwaysLock)"
+    icon: "mdi:lock-outline"
+    entity_category: config

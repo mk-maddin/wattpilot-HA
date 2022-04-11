@@ -1,0 +1,84 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding predefined sensors
+#   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
+
+switch:
+
+#  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
+#    set_id: <optional: name of the charger prop to set if differnet to 'id' - this ALWAYS has to be a property, not attribute>
+#    name: <optional: name of the switch within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    entity_category: <optional: key within HA>
+#    invert: <optional: if set to true the switch state & value of the prop are inverted>
+#    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
+#    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
+
+  - id: alw
+    name: "PV Surplus"
+    description: "Use photovoltaik surplus energy to charge your car."
+    icon: "mdi:solar-power"
+    entity_category: config
+
+  - id: bac
+    name: "Lock level selection"
+    description: "Locks the button on the device so that changing the current level is not possible"
+    icon: "mdi:account-cancel"
+    enabled: False
+    invert: True
+
+  - id: fap
+    name: "Charge Pause"
+    description: "Deactivate 'Charge Pause' to prevent charging breaks during cost optimization"
+    icon: "mdi:motion-pause"
+    enabled: False
+    entity_category: config
+
+  - id: fre
+    name: "Remain in Eco Mode"
+    description: "After reaching the defined kilometer range, switch from Next Trip Mode into Eco Mode"
+    icon: "mdi:leaf-circle-outline"
+    entity_category: config
+
+  - id: ful
+    name: "Lumina Strom/aWattar"
+    description: "Use Lumina Strom/aWattar for charging"
+    icon: "mdi:chart-timeline-variant"
+    enabled: False
+    entity_category: config
+
+  - id: lse
+    name: "LED EnergySaving"
+    description: "Switch off LEDs after 10secs in standby"
+    icon: "mdi:led-off"
+    entity_category: config
+
+  - id: nmo
+    name: "Ground Check"
+    description: "Enable/Disable norway_mode / ground check"
+    icon: "mdi:home-floor-g"
+    entity_category: config
+    invert: True
+
+  - id: su
+    name: "Simulate Unplugging"
+    description: "Simulate unplugging briefly after a chargig interrupt"
+    icon: "mdi:connection"
+    enabled: False
+    entity_category: config
+
+  - id: tse
+    name: "Network Time Protocol"
+    description: "Enable/Disable NTP time server"
+    icon: "mdi:timeline-clock-outline"
+    enabled: False
+    entity_category: config
+
+  - id: upo
+    name: "Unlock Power Outage"
+    description: "Unlock plug during power outage"
+    icon: "mdi:transmission-tower-off"
+    entity_category: config
+

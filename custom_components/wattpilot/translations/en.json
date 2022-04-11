@@ -1,0 +1,44 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Only a single configuration instance is allowed.",
+            "exception": "An unknown exception occured during config_flow - check log for details.",
+            "not_supported": "The current workflow is not supported yet. Please wait for version update."
+        },
+        "step": {
+            "charger": {
+                "data": {
+		    "friendly_name": "Name of your charger (only for you)",
+ 		    "ip_address": "Local IP Address of your charger",
+                    "password": "Your charger connection local user password",
+                    "timeout": "Timeout for connection establishing & initialization",
+		    "cloud_api": "Enable go-e Cloud API",
+		    "debug_properties": "Log all property changes"
+                },
+                "title": "Charger Configuration",
+                "description": "Configuration"
+            }
+        }        
+    },
+    "options": {
+        "abort": {
+            "single_instance_allowed": "Only a single configuration instance is allowed.",
+            "exception": "An unknown exception occured during config_flow - check log for details.",
+            "not_supported": "The current workflow is not supported yet. Please wait for version update."
+        },    
+        "step": {
+            "charger": {
+                "data": {
+		    "friendly_name": "Name of your charger (only for you)",
+		    "ip_address": "Local IP Address of your charger",
+                    "password": "Your charger connection local user password",
+                    "timeout": "Timeout for connection establishing & initialization",
+		    "cloud_api": "Enable go-e Cloud API",
+		    "debug_properties": "Log all property changes"		    
+                },
+                "title": "Charger Configuration",
+                "description": "Configuration"
+            }
+        } 
+    }
+}
