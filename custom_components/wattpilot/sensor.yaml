@@ -148,5 +148,4 @@ sensor:
     icon: "mdi:ev-station"
     device_class: power
     unit_of_measurement: "Wh"
-    entity_category: diagnostic
 

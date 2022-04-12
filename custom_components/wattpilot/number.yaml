@@ -6,7 +6,7 @@
 number:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
-#    set_type: <optional: type required by wattpilot api for setting value - default is float>
+#    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>
@@ -20,7 +20,7 @@ number:
 #    entity_category: <optional: key within HA>
 
   - id: amp
-    set_type: uint
+    set_type: int
     name: "Charging Power"
     description: "Charging range per Hour"
     #icon: "mdi:led-off"
@@ -31,6 +31,7 @@ number:
     device_class: current
 
   - id: fte
+    set_type: float
     name: "Next Trip Charging"
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
     #icon: "mdi:led-off"

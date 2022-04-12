@@ -78,7 +78,7 @@ def GetChargerProp(charger, identifier:str=None, default:str=None):
         _LOGGER.error("%s - GetChargerProp: Could not get property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
         return default
 
-async def async_SetChargerProp(charger, identifier:str=None, value:str=None, force:bool=False) -> bool:
+async def async_SetChargerProp(charger, identifier:str=None, value:str=None, force:bool=False, force_type:str=None) -> bool:
     """Async: set the value of a charger attribute"""
     try:
         if not hasattr(charger, 'allProps'):
@@ -93,13 +93,16 @@ async def async_SetChargerProp(charger, identifier:str=None, value:str=None, for
         if value is None:
             _LOGGER.error("%s - async_SetChargerProp: A value parameter is required: %s=%s", DOMAIN, identifier, value)
             return False
-       
+      
+        if not force_type == None:
+            force_type=str(force_type).lower()
+
         _LOGGER.debug("%s - async_SetChargerProp: Prepare new property value: %s=%s", DOMAIN, identifier, value)
-        if str(value).lower() in ["false","true"]:
+        if str(value).lower() in ["false","true"] or force_type == 'bool':
             v=json.loads(str(value).lower())
-        elif str(value).isnumeric():
+        elif str(value).isnumeric() or force_type == 'int':
             v=int(value)
-        elif str(value).isdecimal():
+        elif str(value).isdecimal() or force_type == 'float':
             v=float(value)
         else:
             v=str(value)

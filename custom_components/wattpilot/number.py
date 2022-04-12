@@ -102,7 +102,7 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
             self._unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
             self._entity_category = self._entity_cfg.get('entity_category', None)
 
-            self._set_type = self._entity_cfg.get('set_type', 'float')
+            self._set_type = self._entity_cfg.get('set_type', None)
             self._min = float(self._entity_cfg.get('min_value', None))
             self._max = float(self._entity_cfg.get('max_value', None))
             self._step = float(self._entity_cfg.get('step', None))
@@ -138,13 +138,13 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         """Return the how the number should be displayed  for this entity."""
         return self._mode
 
-    async def async_set_value(self, value: float) -> None:
+    async def async_set_value(self, value) -> None:
         """Async: Change the current value."""
         try:
             _LOGGER.debug("%s - %s: async_set_value: value was changed to: %s", self._charger_id, self._identifier, float)
             if (self._identifier == 'fte'):
                 _LOGGER.debug("%s - %s: async_set_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
                 await async_SetChargerProp(self._charger,'esk',True)                 
-            await async_SetChargerProp(self._charger,self._identifier,value)
+            await async_SetChargerProp(self._charger,self._identifier,value,force_type=self._set_type)
         except Exception as e:
             _LOGGER.error("%s - %s: update failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

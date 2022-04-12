@@ -41,13 +41,7 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 ## Known Errors:
 
-### number platform:
-Is currently deactivated as:
-- cannot set Ampere value for charging via number entity
-   (Error Sending Request 2. Message: value must be uint8_t)
-- cannot set kWH/KM value for "Next Trip" charging mode
-   (Error Sending Request 4. Message: value must be double)
-
+None known at the moment.
 
 # Screenshots
 
