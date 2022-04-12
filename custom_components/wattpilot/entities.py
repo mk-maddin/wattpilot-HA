@@ -199,7 +199,7 @@ class ChargerPlatformEntity(Entity):
                         _LOGGER.debug("%s - %s: update: adding attribute: %s", self._charger_id, self._identifier, attr_id)
                         self._attributes[attr_id] = getattr(namespace,attr_id,STATE_UNKNOWN)
                 elif isinstance(state, list):
-                    _LOGGER.warning("%s - %s: update: list value: %s (%s)", self._charger_id, self._identifier, state, type(state))
+                    _LOGGER.debug("%s - %s: update: list value", self._charger_id, self._identifier)
                     state_list=state
                     state=state_list[0]
                     i=1
