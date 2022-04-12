@@ -141,6 +141,14 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
                     for attr_id in self._entity_cfg.get('attribute_ids', None):
                         _LOGGER.debug("%s - %s: update: adding attribute: %s", self._charger_id, self._identifier, attr_id)
                         self._attributes[attr_id] = getattr(namespace,attr_id,STATE_UNKNOWN)
+                elif isinstance(state, list):
+                    _LOGGER.warning("%s - %s: update: list value: %s (%s)", self._charger_id, self._identifier, state, type(state))
+                    state_list=state
+                    state=state_list[0]
+                    i=1
+                    for attr_state in state_list[1:]:
+                        self._attributes['state'+str(i)]=attr_state
+                        i=i+1
 
             _LOGGER.debug("%s - %s: update: validate/match state to select options: %s", self._charger_id, self._identifier, state)
             if state in list(self._opt_dict.keys()):
