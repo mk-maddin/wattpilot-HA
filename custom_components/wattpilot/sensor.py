@@ -21,6 +21,7 @@ from .entities import ChargerPlatformEntity
 
 from .const import (
     CONF_CHARGER,
+    CONF_PUSH_ENTITIES,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -52,6 +53,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         _LOGGER.error("%s - async_setup_entry %s: Getting charger instance from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
+    try:
+        _LOGGER.debug("%s - async_setup_entry %s: Getting push entities dict from data store", entry.entry_id, platform)
+        push_entities=hass.data[DOMAIN][entry.entry_id][CONF_PUSH_ENTITIES]
+    except Exception as e:
+        _LOGGER.error("%s - async_setup_entry %s: Getting push entities dict from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+
     for entity_cfg in yaml_cfg[platform]:
         try:
             if not 'id' in entity_cfg or entity_cfg['id'] is None:
@@ -60,9 +68,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             elif not 'source' in entity_cfg or entity_cfg['source'] is None:
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
-            #entity=ChargerSensor(entry, entity_cfg, charger)
-            entity=ChargerPlatformEntity(entry, entity_cfg, charger)
+            #entity=ChargerSensor(hass, entry, entity_cfg, charger)
+            entity=ChargerPlatformEntity(hass, entry, entity_cfg, charger)
             entites.append(entity)
+            if entity._source == 'property':
+                push_entities[entity._identifier]=entity
             await asyncio.sleep(0)
         except Exception as e:
             _LOGGER.error("%s - async_setup_entry %s: Reading static yaml configuration failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)

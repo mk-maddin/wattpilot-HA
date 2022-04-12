@@ -9,8 +9,13 @@ import json
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.const import (
+    CONF_PARAMS,
+)
 
 from .const import (
+    CONF_DBG_PROPS,
+    CONF_PUSH_ENTITIES,
     DOMAIN,
 )
 
@@ -43,11 +48,36 @@ def ProgrammingDebug(obj, show_all:bool=False) -> None:
         _LOGGER.error("%s - ProgrammingDebug: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
         pass
 
-def PropertyDebug(identifier: str, value: str) -> None:
+async def async_PropertyDebug(identifier: str, value: str) -> None:
     """Log properties if they change"""
     exclude_properties = ['efh','efh32','efh8','ehs','emhb','fbuf_age','fbuf_pAkku','fbuf_pGrid','fbuf_pPv','fhz','loc','lps','nrg','rbt','rcd','rfb','rssi','tma','tpcm','utc','fbuf_akkuSOC','lpsc','pvopt_averagePAkku','pvopt_averagePGrid','pvopt_averagePPv','pvopt_deltaP']
     if not identifier in exclude_properties:
-        _LOGGER.warning("watch_properties: %s => %s ",identifier,value)
+        _LOGGER.warning("async_PropertyDebug: watch_properties: %s => %s ",identifier,value)
+
+def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
+    """Watches on property updates and executes corresponding action"""
+    try:
+        #_LOGGER.debug("%s - PropertyUpdateHandler: 'self' execute async", entry_id)
+        asyncio.run_coroutine_threadsafe(async_PropertyUpdateHandler(hass, entry_id, identifier, value), hass.loop)
+    except Exception as e:
+        _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        return default
+
+async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
+    """Asnyc: Watches on property updates and executes corresponding action"""
+    try:
+        #_LOGGER.debug("%s - async_PropertyUpdateHandler: get entry_data", entry_id)
+        entry_data=hass.data[DOMAIN][entry_id]
+       
+        entity=entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
+        if not entity is None:
+            hass.async_create_task(entity.async_local_push(value))
+        
+        if entry_data[CONF_PARAMS].get(CONF_DBG_PROPS,False):
+            hass.async_create_task(async_PropertyDebug(identifier, value))
+    except Exception as e:
+        _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        return default
 
 async def async_GetChargerProp(charger, identifier: str, default=None):
     """Async: return the value of a charger attribute"""

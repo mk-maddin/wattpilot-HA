@@ -24,6 +24,7 @@ from .const import (
     CLOUD_API_URL_PREFIX,
     CLOUD_API_URL_POSTFIX,
     CONF_DBG_PROPS,
+    CONF_PUSH_ENTITIES,
     DEFAULT_TIMEOUT,
     DOMAIN,
     FUNC_OPTION_UPDATES,
@@ -32,7 +33,7 @@ from .const import (
 from .utils import (
     async_ProgrammingDebug,
     async_SetChargerProp,
-    PropertyDebug,
+    PropertyUpdateHandler,
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data=hass.data[DOMAIN][entry.entry_id]
         entry_data[CONF_CHARGER]=charger
         entry_data[CONF_PARAMS]=entry.data
+        entry_data.setdefault(CONF_PUSH_ENTITIES, {})
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating data store failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
@@ -130,12 +132,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     try:
-        if entry.data.get(CONF_DBG_PROPS, False):
-            _LOGGER.debug("%s - async_setup_entry: register properties to watch in log", entry.entry_id)
-            charger.register_property_callback(PropertyDebug)        
+        _LOGGER.debug("%s - async_setup_entry: register properties update handler", entry.entry_id)
+        charger.register_property_callback(lambda identifier, value: PropertyUpdateHandler(hass, entry.entry_id, identifier, value))
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Setup trigger for platform %s failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry: Cloud not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
+
 
     _LOGGER.debug("%s - async_setup_entry: Completed", entry.entry_id)
     #await async_ProgrammingDebug(charger)

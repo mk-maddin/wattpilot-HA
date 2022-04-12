@@ -22,6 +22,7 @@ from .entities import ChargerPlatformEntity
 
 from .const import (
     CONF_CHARGER,
+    CONF_PUSH_ENTITIES,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -54,6 +55,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         _LOGGER.error("%s - async_setup_entry %s: Getting charger instance from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
+    try:
+        _LOGGER.debug("%s - async_setup_entry %s: Getting push entities dict from data store", entry.entry_id, platform)
+        push_entities=hass.data[DOMAIN][entry.entry_id][CONF_PUSH_ENTITIES]
+    except Exception as e:
+        _LOGGER.error("%s - async_setup_entry %s: Getting push entities dict from data store failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+
     for entity_cfg in yaml_cfg[platform]:
         try:
             entity_cfg['source'] = 'property'
@@ -63,8 +71,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             elif not 'source' in entity_cfg or entity_cfg['source'] is None:
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue            
-            entity=ChargerSelect(entry, entity_cfg, charger)
+            entity=ChargerSelect(hass, entry, entity_cfg, charger)
             entites.append(entity)
+            if entity._source == 'property':
+                push_entities[entity._identifier]=entity
             await asyncio.sleep(0)
         except Exception as e:
             _LOGGER.error("%s - async_setup_entry %s: Reading static yaml configuration failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
@@ -80,9 +90,10 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
     """Select class for Fronius Wattpilot integration."""
 
 
-    def __init__(self, entry: ConfigEntry, entity_cfg, charger) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
         """Initialize the object."""
         try:
+            self.hass = hass
             self._charger_id = str(entry.data.get(CONF_FRIENDLY_NAME, entry.data.get(CONF_IP_ADDRESS, DEFAULT_NAME)))
             self._identifier = str(entity_cfg.get('id'))
             _LOGGER.debug("%s - %s: __init__", self._charger_id, self._identifier)
@@ -116,54 +127,27 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
             self._state = STATE_UNKNOWN
  
             self.uniqueid = self._charger_id + "-" + self._identifier
-            _LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
+            #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
 
 
-    async def async_update(self) -> None:
-        """Async: Get latest data and states from the device."""
+    async def _async_update_validate_platform_state(self, state=None):
+        """Async: Validate the given state for select specific requirements"""
         try:
-            #_LOGGER.debug("%s - %s: update", self._charger_id, self._identifier)
-            if self._source == 'attribute':
-                state = getattr(self._charger,self._identifier,STATE_UNKNOWN)
-            elif self._source == 'property':
-                state = await async_GetChargerProp(self._charger,self._identifier,STATE_UNKNOWN)
-                if str(state).startswith('namespace'):
-                    _LOGGER.debug("%s - %s: update: namespace value", self._charger_id, self._identifier)
-                    namespace=state
-                    if self._entity_cfg.get('value_id', None) is None:
-                        _LOGGER.error("%s - %s: update failed: please specific the 'value_id' to use as state value", self._charger_id, self._identifier) 
-                        return None
-                    state = getattr(namespace,self._entity_cfg.get('value_id',STATE_UNKNOWN),STATE_UNKNOWN)
-                    #_LOGGER.debug("%s - %s: update: new state: %s", self._charger_id, self._identifier, state)
-                    for attr_id in self._entity_cfg.get('attribute_ids', None):
-                        _LOGGER.debug("%s - %s: update: adding attribute: %s", self._charger_id, self._identifier, attr_id)
-                        self._attributes[attr_id] = getattr(namespace,attr_id,STATE_UNKNOWN)
-                elif isinstance(state, list):
-                    _LOGGER.debug("%s - %s: update: list value", self._charger_id, self._identifier)
-                    state_list=state
-                    state=state_list[0]
-                    i=1
-                    for attr_state in state_list[1:]:
-                        self._attributes['state'+str(i)]=attr_state
-                        i=i+1
-
-            _LOGGER.debug("%s - %s: update: validate/match state to select options: %s", self._charger_id, self._identifier, state)
             if state in list(self._opt_dict.keys()):
                 state = self._opt_dict[state]
             elif state in list(self._opt_dict.values()):
                 pass 
                 #state = self._opt_dict(state)
             else:
-                _LOGGER.error("%s - %s: update: state %s not within options_id values: %s", self._charger_id, self._identifier, state, self._opt_dict)
+                _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: state %s not within options_id values: %s", self._charger_id, self._identifier, state, self._opt_dict)
                 state = STATE_UNKNOWN
-            self._state = state
-            self.async_write_ha_state()
-            #_LOGGER.debug("%s - %s: update complete: %s", self._charger_id, self._identifier, state)
+            return state
         except Exception as e:
-            _LOGGER.error("%s - %s: update failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            return None
 
 
     async def async_select_option(self, option: str) -> None:

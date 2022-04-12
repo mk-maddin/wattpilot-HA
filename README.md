@@ -29,19 +29,19 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 ## Open Topics:
 
-- possibly change implentation type from pull to push via "watch_properties" for faster state updates
 - create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 - create a light integration for LED color control etc.
 - create a datetime integration for next trip selection
 - option to directly reload component only
-- provide a integration picture
+- provide an integration picture
 - create a reboot button
 	-> Anybody out there with knowledge about required API call to trigger a restart?
 	   I was not able to identify myself... :(
 
 ## Known Errors:
 
-None known at the moment.
+- config_flow Options workflow (if you press "configure" button within Integrations view) does not work.
+  WORKAROUND: If you want to change options remove and re-add the entity.
 
 # Screenshots
 
