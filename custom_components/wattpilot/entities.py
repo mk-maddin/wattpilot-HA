@@ -35,36 +35,46 @@ class ChargerPlatformEntity(Entity):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
         """Initialize the object."""
         try:
-            self.hass = hass
             self._charger_id = str(entry.data.get(CONF_FRIENDLY_NAME, entry.data.get(CONF_IP_ADDRESS, DEFAULT_NAME)))
             self._identifier = str(entity_cfg.get('id'))
             _LOGGER.debug("%s - %s: __init__", self._charger_id, self._identifier)
             self._charger = charger
             self._source = entity_cfg.get('source', 'property')
             if self._source == 'attribute' and not hasattr(self._charger, self._identifier):
-                _LOGGER.error("%s - %s: __init__: Charger does not have an attributed: %s (maybe a property?)", self._charger_id, self._identifier, self._identifier)
+                _LOGGER.error("%s - %s: __init__: Charger does not have an attribute: %s (maybe a property?)", self._charger_id, self._identifier, self._identifier)
                 return None
             elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
                 _LOGGER.error("%s - %s: __init__: Charger does not have a property: %s (maybe an attribute?)", self._charger_id, self._identifier, self._identifier)
                 return None
             self._entity_cfg = entity_cfg
             self._entry = entry
-        
+            self.hass = hass
+
             self._name = self._charger_id + ' ' + self._entity_cfg.get('name', self._entity_cfg.get('id'))
             self._icon = self._entity_cfg.get('icon', None)
             self._device_class = self._entity_cfg.get('device_class', None)
             self._unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
             self._entity_category = self._entity_cfg.get('entity_category', None)
-            
+            self._set_type = self._entity_cfg.get('set_type', None)
+
             self._attributes = {}
             self._attributes['description'] = self._entity_cfg.get('description', None)
             self._state = STATE_UNKNOWN
-            
+           
+            self._init_platform_specific()
+
             self.uniqueid = self._charger_id + "-" + self._identifier
             #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
+
+
+    def _init_platform_specific(self): 
+        """Platform specific init actions"""
+        #do nothing here as this is only a drop-in option for other platforms
+        #do not put actions in a try / except block - execeptions should be covered by __init__
+        pass
 
 
     @property
@@ -151,6 +161,7 @@ class ChargerPlatformEntity(Entity):
             return True
         else:
             return False
+
 
     @property
     def entity_registry_enabled_default(self) -> bool:

@@ -1,0 +1,24 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding predefined sensors
+#   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
+
+button:
+
+#  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
+#    set_value: <value to be set on button press for id property>
+#    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
+#    name: <optional: name of the switch within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    device_class: <optional: key within HA>
+#    entity_category: <optional: key within HA>
+
+  - id: rst
+    set_value: 1
+    name: "Restart"
+    description: "Restart the charger"
+    #icon: "mdi:led-off"
+    device_class: restart
+

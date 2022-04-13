@@ -34,9 +34,9 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 - create a datetime integration for next trip selection
 - option to directly reload component only
 - provide an integration picture
-- create a reboot button
-	-> Anybody out there with knowledge about required API call to trigger a restart?
-	   I was not able to identify myself... :(
+- switch to enable/disable AP Mode/Hotspot of device
+	-> Did somebody find a corresponding functionality wihtin the Wattpilot APP?
+
 
 ## Known Errors:
 

@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.components.number import NumberEntity
+from homeassistant.components.button import ButtonEntity
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
@@ -34,7 +34,7 @@ from .utils import (
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
-platform='number'
+platform='button'
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the sensor platform."""
@@ -64,14 +64,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     for entity_cfg in yaml_cfg.get(platform, []):
         try:
-            entity_cfg['source'] = 'property'
+            entity_cfg['source'] = 'none'
             if not 'id' in entity_cfg or entity_cfg['id'] is None:
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no id: %s", entry.entry_id, platform, entity_cfg)
                 continue
             elif not 'source' in entity_cfg or entity_cfg['source'] is None:
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
-            entity=ChargerNumber(hass, entry, entity_cfg, charger)
+            entity=ChargerButton(hass, entry, entity_cfg, charger)
             entites.append(entity)
             if entity._source == 'property':
                 push_entities[entity._identifier]=entity
@@ -86,49 +86,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities(entites)
 
 
-class ChargerNumber(ChargerPlatformEntity, NumberEntity):
-    """Number class for Fronius Wattpilot integration."""
+class ChargerButton(ChargerPlatformEntity, ButtonEntity):
+    """Button class for Fronius Wattpilot integration."""
 
-    
+
     def _init_platform_specific(self):
         """Platform specific init actions"""
-        self._min = float(self._entity_cfg.get('min_value', None))
-        self._max = float(self._entity_cfg.get('max_value', None))
-        self._step = float(self._entity_cfg.get('step', None))
-        self._mode = self._entity_cfg.get('mode', None)
+        self._set_value = self._entity_cfg.get('set_value', None)
+        if self._set_value == None:
+            _LOGGER.error("%s - %s: __init__: Required configuration option 'set_value' missing - please specify: %s", self._charger_id, self._identifier, self._set_value)
+            return None
 
 
-    @property
-    def min_value(self) -> float | None:
-        """Return the minimum accepted value (inclusive) for this entity."""
-        return self._min
+    async def async_local_poll(self) -> None:
+        """Async: Poll the latest data and states from the entity."""
+        #no state required for ButtonEntity
+        pass
 
 
-    @property
-    def max_value(self) -> float | None:
-        """Return the maximum accepted value (inclusive) for this entity."""
-        return self._max
-
-
-    @property
-    def step(self) -> float | None:
-        """Return the resolution of the values for this entity."""
-        return self._step
-
-
-    @property
-    def mode(self) -> str | None:
-        """Return the how the number should be displayed  for this entity."""
-        return self._mode
-
-
-    async def async_set_value(self, value) -> None:
-        """Async: Change the current value."""
+    async def async_press(self) -> None:
+        """Async: Handle button press"""
         try:
-            _LOGGER.debug("%s - %s: async_set_value: value was changed to: %s", self._charger_id, self._identifier, float)
-            if (self._identifier == 'fte'):
-                _LOGGER.debug("%s - %s: async_set_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
-                await async_SetChargerProp(self._charger,'esk',True)                 
-            await async_SetChargerProp(self._charger,self._identifier,value,force_type=self._set_type)
+            await async_SetChargerProp(self._charger,self._identifier,self._set_value,force=True,force_type=self._set_type)
         except Exception as e:
             _LOGGER.error("%s - %s: update failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

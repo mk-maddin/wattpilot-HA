@@ -6,7 +6,6 @@
 switch:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
-#    set_id: <optional: name of the charger prop to set if differnet to 'id' - this ALWAYS has to be a property, not attribute>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>

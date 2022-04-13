@@ -90,47 +90,15 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
     """Select class for Fronius Wattpilot integration."""
 
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
-        """Initialize the object."""
-        try:
-            self.hass = hass
-            self._charger_id = str(entry.data.get(CONF_FRIENDLY_NAME, entry.data.get(CONF_IP_ADDRESS, DEFAULT_NAME)))
-            self._identifier = str(entity_cfg.get('id'))
-            _LOGGER.debug("%s - %s: __init__", self._charger_id, self._identifier)
-            self._charger = charger
-            self._source = entity_cfg.get('source', 'property')
-            if self._source == 'attribute' and not hasattr(self._charger, self._identifier):
-                _LOGGER.error("%s - %s: __init__: Charger does not have an attributed: %s (maybe a property?)", self._charger_id, self._identifier, self._identifier)
-                return None
-            elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
-                _LOGGER.error("%s - %s: __init__: Charger does not have a property: %s (maybe an attribute?)", self._charger_id, self._identifier, self._identifier)
-                return None
-            self._entity_cfg = entity_cfg
-            self._entry = entry
-        
-            self._name = self._charger_id + ' ' + self._entity_cfg.get('name', self._entity_cfg.get('id'))
-            self._icon = self._entity_cfg.get('icon', None)
-            self._device_class = self._entity_cfg.get('device_class', None)
-            self._unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
-            self._entity_category = self._entity_cfg.get('entity_category', None)
-
-            self._opt_identifier = self._entity_cfg.get('options_id', None)
-            _LOGGER.debug("%s - %s: __init__ opt_identifier: %s)", self._charger_id, self._identifier, self._opt_identifier)
-            self._opt_dict = getattr(self._charger,self._opt_identifier,list(STATE_UNKNOWN))
-            _LOGGER.debug("%s - %s: __init__ opt_enum: %s)", self._charger_id, self._identifier, self._opt_dict) 
-            if not self._opt_dict == STATE_UNKNOWN:
-                self._attr_options = list(self._opt_dict.values())
-            _LOGGER.debug("%s - %s: __init__ attr_options: %s)", self._charger_id, self._identifier, self._attr_options) 
-
-            self._attributes = {}
-            self._attributes['description'] = self._entity_cfg.get('description', None)
-            self._state = STATE_UNKNOWN
- 
-            self.uniqueid = self._charger_id + "-" + self._identifier
-            #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
-        except Exception as e:            
-            _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
-            return None
+    def _init_platform_specific(self):
+        """Platform specific init actions"""
+        self._opt_identifier = self._entity_cfg.get('options_id', None)
+        #_LOGGER.debug("%s - %s: __init__ opt_identifier: %s)", self._charger_id, self._identifier, self._opt_identifier)
+        self._opt_dict = getattr(self._charger,self._opt_identifier,list(STATE_UNKNOWN))
+        #_LOGGER.debug("%s - %s: __init__ opt_enum: %s)", self._charger_id, self._identifier, self._opt_dict) 
+        if not self._opt_dict == STATE_UNKNOWN:
+            self._attr_options = list(self._opt_dict.values())
+        #_LOGGER.debug("%s - %s: __init__ attr_options: %s)", self._charger_id, self._identifier, self._attr_options)
 
 
     async def _async_update_validate_platform_state(self, state=None):
@@ -140,7 +108,6 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
                 state = self._opt_dict[state]
             elif state in list(self._opt_dict.values()):
                 pass 
-                #state = self._opt_dict(state)
             else:
                 _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: state %s not within options_id values: %s", self._charger_id, self._identifier, state, self._opt_dict)
                 state = STATE_UNKNOWN
@@ -159,7 +126,7 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
                 _LOGGER.error("%s - %s: async_select_option: option %s not within options_id keys: %s", self._charger_id, self._identifier, state, self._opt_dict)
                 return None
             _LOGGER.debug("%s - %s: async_select_option: save option key %s", self._charger_id, self._identifier, key)
-            await async_SetChargerProp(self._charger,self._identifier,key)
+            await async_SetChargerProp(self._charger,self._identifier,key,force_type=self._set_type)
         except Exception as e:
             _LOGGER.error("%s - %s: async_select_option failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
