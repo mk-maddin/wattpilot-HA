@@ -19,6 +19,5 @@ button:
     set_value: 1
     name: "Restart"
     description: "Restart the charger"
-    #icon: "mdi:led-off"
     device_class: restart
 

@@ -23,7 +23,7 @@ number:
     set_type: int
     name: "Charging Power"
     description: "Charging range per Hour"
-    #icon: "mdi:led-off"
+    icon: "mdi:car-electric"
     min_value: 6.0
     max_value: 16.0
     step: 1.0
@@ -34,9 +34,10 @@ number:
     set_type: float
     name: "Next Trip Charging"
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
-    #icon: "mdi:led-off"
+    icon: "mdi:road-variant"
     min_value: 100.0
     max_value: 50000.0
     step: 10.0
     device_class: energy
     unit_of_measurement: "Wh"
+

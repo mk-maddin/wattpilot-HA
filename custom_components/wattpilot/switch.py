@@ -103,6 +103,13 @@ class ChargerSwitch(ChargerPlatformEntity):
             else:
                 _LOGGER.warning("%s - %s: _async_update_validate_platform_state failed: state %s not valid for switch platform", self._charger_id, self._identifier, state)
                 state = STATE_UNKNOWN
+
+            if state == STATE_ON and self._entity_cfg.get('invert', False):
+                _LOGGER.debug("%s - %s: _async_update_validate_platform_state: invert state: %s -> %s", self._charger_id, self._identifier, STATE_ON, STATE_OFF)
+                state = STATE_OFF
+            elif state == STATE_OFF and self._entity_cfg.get('invert', False):
+                _LOGGER.debug("%s - %s: _async_update_validate_platform_state: invert state: %s -> %s", self._charger_id, self._identifier, STATE_OFF, STATE_ON)
+                state = STATE_ON
             return state
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
@@ -112,11 +119,7 @@ class ChargerSwitch(ChargerPlatformEntity):
     @property
     def is_on(self) -> bool:
         """Return true if entity is on."""
-        if self._entity_cfg.get('invert', False):
-            if self._state == STATE_ON : 
-                return False
-            return True
-        elif self._state == STATE_ON: 
+        if self.state == STATE_ON: 
            return True
         return False
 
