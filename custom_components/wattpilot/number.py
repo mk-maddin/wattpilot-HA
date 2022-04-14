@@ -1,4 +1,4 @@
-"""Sensor entities for the Fronius Wattpilot integration."""
+"""Number entities for the Fronius Wattpilot integration."""
 
 from __future__ import annotations
 from typing import Final

@@ -8,12 +8,14 @@ import json
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import (
     CONF_PARAMS,
 )
 
 from .const import (
+    CONF_CHARGER,
     CONF_DBG_PROPS,
     CONF_PUSH_ENTITIES,
     DOMAIN,
@@ -73,7 +75,7 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         if not entity is None:
             hass.async_create_task(entity.async_local_push(value))
         
-        if entry_data[CONF_PARAMS].get(CONF_DBG_PROPS,False):
+        if entry_data.get(CONF_DBG_PROPS, False):
             hass.async_create_task(async_PropertyDebug(identifier, value))
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
@@ -145,3 +147,51 @@ async def async_SetChargerProp(charger, identifier:str=None, value:str=None, for
         _LOGGER.error("%s - async_SetChargerProp: Could not set property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
+async def async_GetDataStoreFromDeviceID(hass: HomeAssistant, device_id: str):
+    """Async: return the data store for a specific device_id"""
+    try:
+        _LOGGER.debug("%s - async_GetDataStoreFromDeviceID: receiving device: %s", DOMAIN, device_id)
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get(device_id)
+
+        _LOGGER.debug("%s - async_GetDataStoreFromDeviceID: get charger data store for config entry", DOMAIN)
+        entry_data = None
+        for entry_id in device.config_entries:
+            if not entry_data is None:
+                continue
+            entry_data = hass.data[DOMAIN].get(entry_id, None)
+            await asyncio.sleep(0)
+        if entry_data is None:
+            _LOGGER.error("%s - async_GetDataStoreFromDeviceID: Unable to receive data store for device: %s", DOMAIN, device_id)
+            return None
+
+        _LOGGER.debug("%s - async_GetDataStoreFromDeviceID: return data_entry", DOMAIN)
+        return entry_data
+    except Exception as e:
+        _LOGGER.error("%s - async_GetDataStoreFromDeviceID: Could not get data store %s: %s (%s.%s)", DOMAIN, device_id, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+
+async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
+    """Async: return the charger object for a specific device_id"""
+    try:
+        _LOGGER.debug("%s - async_GetChargerFromDeviceID: receiving device: %s", DOMAIN, device_id)
+        device_registry = dr.async_get(hass)
+        device = device_registry.async_get(device_id)
+
+        _LOGGER.debug("%s - async_GetChargerFromDeviceID: get charger object and data store for config entry", DOMAIN)
+        charger = None
+        for entry_id in device.config_entries:
+            if not charger is None:
+                continue
+            entry_data = hass.data[DOMAIN].get(entry_id, None)
+            charger = entry_data.get(CONF_CHARGER, None)
+            await asyncio.sleep(0)
+        if charger is None:
+            _LOGGER.error("%s - async_GetChargerFromDeviceID: Unable to identify charger object for device: %s", DOMAIN, device_id)
+            return None
+
+        _LOGGER.debug("%s - async_GetChargerFromDeviceID: return charger object", DOMAIN)
+        return charger
+    except Exception as e:
+        _LOGGER.error("%s - async_GetChargerFromDeviceID: Could not get charger %s: %s (%s.%s)", DOMAIN, device_id, str(e), e.__class__.__module__, type(e).__name__)
+        return False

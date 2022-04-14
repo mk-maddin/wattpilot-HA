@@ -15,8 +15,6 @@ from homeassistant.const import (
 import homeassistant.helpers.config_validation as cv
 
 from .const import (
-    CONF_CLOUD_API,
-    CONF_DBG_PROPS,
     DEFAULT_TIMEOUT,
     DOMAIN,
 )
@@ -28,7 +26,5 @@ CHARGER_SCHEMA: Final = vol.Schema({
     vol.Required(CONF_IP_ADDRESS, default="192.168.1.123"): cv.string,
     vol.Required(CONF_PASSWORD, default='12345678ABCD'): cv.string,
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
-    vol.Optional(CONF_CLOUD_API, default=False): cv.boolean,
-    vol.Optional(CONF_DBG_PROPS, default=False): cv.boolean,
 })
 

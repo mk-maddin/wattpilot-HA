@@ -1,12 +1,13 @@
 # version: 2021.12.19
 # author: Martin Kraemer, mk.maddin@gmail.com
-# description: YAML configuration file - holding predefined sensors
+# description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
 
 select:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
 #    options_id: <id of the enum attribute which contains the options as values (not keys!) - this ALWAYS has to be a property, not attribute>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>

@@ -11,9 +11,7 @@
 		    "friendly_name": "Name der Ladestation (nur Anzeigename)",
  		    "ip_address": "Lokale IP Adresse der Ladestation",
                     "password": "Password für die lokale verbindung zur Ladestation",
-                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung",
-		    "cloud_api": "Aktiviere go-e Cloud API",
-		    "debug_properties": "Alle Wertänderungen loggen"
+                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung"
                 },
                 "title": "Ladestation konfigurieren",
                 "description": "Konfiguration"
@@ -32,9 +30,7 @@
 		    "friendly_name": "Name der Ladestation (nur Anzeigename)",
  		    "ip_address": "Lokale IP Adresse der Ladestation",
                     "password": "Password für die lokale verbindung zur Ladestation",
-                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung",
-		    "cloud_api": "Aktiviere go-e Cloud API",
-		    "debug_properties": "Alle Wertänderungen loggen"
+                    "timeout": "Zeitüberschreitung für die Verbindungsherstellung und initialisierung"
                 },
                 "title": "Ladestation konfigurieren",
                 "description": "Konfiguration"

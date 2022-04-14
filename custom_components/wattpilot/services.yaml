@@ -1,0 +1,57 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding component services
+
+set_next_trip:
+  name: Set Next Trip
+  dscription: Set the time for the next trip used by next trip charging mode
+  fields:
+    device_id:
+      name: Charger
+      description: Charger device for which to apply change
+      example: 1625eec2e3f83829c2d52999ecdd2036
+      selector:
+        device:
+          integration: wattpilot
+    trigger_time:
+      name: NextTrip
+      description: Next trip time
+      example: 06:30:00
+      selector:
+        time:
+
+set_goe_cloud:
+  name: Set Go-E Cloud
+  dscription: Enable or disable the Go-E cloud access for wallbox
+  fields:
+    device_id:
+      name: Charger
+      description: Charger device for which to apply change
+      example: 1625eec2e3f83829c2d52999ecdd2036
+      selector:
+        device:
+          integration: wattpilot
+    cloud_api:
+      name: CloudAPI
+      description: Turn E-Cloud Api access ON or OFF
+      example: False
+      selector:
+        boolean:
+
+set_debug_properties:
+  name: Set debug properties
+  dscription: Enable or disable logging of charger property changes as warning within logs
+  fields:
+    device_id:
+      name: Charger
+      description: Charger device for which to apply change
+      example: 1625eec2e3f83829c2d52999ecdd2036
+      selector:
+        device:
+          integration: wattpilot
+    debug_properties:
+      name: Debug
+      description: Turn debugging ON or OFF
+      example: True
+      selector:
+        boolean:

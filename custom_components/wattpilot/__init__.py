@@ -8,8 +8,6 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (
-    CONF_API_KEY,
-    CONF_EXTERNAL_URL,
     CONF_IP_ADDRESS,
     CONF_PARAMS,
     CONF_PASSWORD,
@@ -20,15 +18,18 @@ import wattpilot
 
 from .const import (
     CONF_CHARGER,
-    CONF_CLOUD_API,
-    CLOUD_API_URL_PREFIX,
-    CLOUD_API_URL_POSTFIX,
     CONF_DBG_PROPS,
     CONF_PUSH_ENTITIES,
     DEFAULT_TIMEOUT,
     DOMAIN,
     FUNC_OPTION_UPDATES,
     SUPPORTED_PLATFORMS,
+)
+from .services import (
+    async_registerService,
+    async_service_SetDebugProperties,
+    async_service_SetGoECloud,
+    async_service_SetNextTrip,
 )
 from .utils import (
     async_ProgrammingDebug,
@@ -91,39 +92,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     try:
-        api_state = entry.data.get(CONF_CLOUD_API, False)
-        if api_state: 
-            _LOGGER.debug("%s - async_setup_entry: Enabling cloud api", entry.entry_id)
-            if not await async_SetChargerProp(charger,'cae',True):
-                return False
-            timer=0
-            timeout=entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-            while timeout > timer and (charger.cak == '' or charger.cak is None):
-                await asyncio.sleep(1)
-                timer+=1
-            if not timeout > timer:
-                _LOGGER.error("%s - async_setup_entry: Timeout - api key not available after: %s sec", entry.entry_id, timeout)
-                entry_data[CONF_API_KEY]=False
-                return False
-
-            _LOGGER.debug("%s - async_setup_entry: Saving api key to data store", entry.entry_id)            
-            entry_data[CONF_API_KEY]=charger.cak
-            _LOGGER.debug("%s - async_setup_entry: Cloud API KEY: %s", entry.entry_id, entry_data[CONF_API_KEY])
-
-            serial = getattr(self._charger,'serial', await async_GetChargerProp(self._charger,'sse',False))
-            if serial:
-                entry_data[CONF_EXTERNAL_URL]=CLOUD_API_URL_PREFIX + serial + CLOUD_API_URL_POSTFIX
-                _LOGGER.debug("%s - async_setup_entry: Cloud API URL: %s", entry.entry_id, entry_data[CONF_EXTERNAL_URL])
-        else:
-            _LOGGER.debug("%s - async_setup_entry: Disabling cloud api", entry.entry_id)
-            entry_data[CONF_API_KEY]=False
-            if not await async_SetChargerProp(charger,'cae',False):
-                return False
-    except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Could not adjust cloud api: cloud_api=%s (%s.%s)", entry.entry_id, api_state, str(e), e.__class__.__module__, type(e).__name__)
-        return False
-
-    try:
         for platform in SUPPORTED_PLATFORMS:
             _LOGGER.debug("%s - async_setup_entry: Trigger setup for platform: %s ", entry.entry_id, platform)
             hass.async_create_task(hass.config_entries.async_forward_entry_setup(entry, platform))
@@ -138,9 +106,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("%s - async_setup_entry: Cloud not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
+    try:
+        _LOGGER.debug("%s - async_setup_entry: register services", entry.entry_id)
+        await async_registerService(hass, "set_goe_cloud", async_service_SetGoECloud)
+        await async_registerService(hass, "set_debug_properties", async_service_SetDebugProperties)
+        await async_registerService(hass, "set_next_trip", async_service_SetNextTrip)        
+    except Exception as e:
+        _LOGGER.error("%s - async_setup_entry: register services failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        return False 
 
     _LOGGER.debug("%s - async_setup_entry: Completed", entry.entry_id)
-    #await async_ProgrammingDebug(charger)
     return True
 
 async def options_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> bool:

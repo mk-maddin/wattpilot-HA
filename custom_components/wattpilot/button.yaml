@@ -1,12 +1,13 @@
 # version: 2021.12.19
 # author: Martin Kraemer, mk.maddin@gmail.com
-# description: YAML configuration file - holding predefined sensors
+# description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
 
 button:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
 #    set_value: <value to be set on button press for id property>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
@@ -20,4 +21,24 @@ button:
     name: "Restart"
     description: "Restart the charger"
     device_class: restart
+
+#https://www.goingelectric.de/forum/viewtopic.php?t=71547
+
+  - id: frc
+    uid: frc0
+    set_value: 0
+    name: "Start Charging"
+    description: "Manually start the charging process"
+
+  - id: frc
+    uid: frc1
+    set_value: 1
+    name: "Stop Charging"
+    description: "Manually stop the charging process"
+
+  - id: frc
+    uid: frc2
+    set_value: 2
+    name: "Start Charging Force"
+    description: "Force the charging start (required for some vehicles instead of normal start)"
 

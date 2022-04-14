@@ -63,7 +63,7 @@ class ChargerPlatformEntity(Entity):
            
             self._init_platform_specific()
 
-            self.uniqueid = self._charger_id + "-" + self._identifier
+            self.uniqueid = self._charger_id + "-" + self._entity_cfg.get('uid', self._identifier)
             #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

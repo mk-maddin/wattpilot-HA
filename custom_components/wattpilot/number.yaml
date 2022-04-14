@@ -1,12 +1,13 @@
 # version: 2021.12.19
 # author: Martin Kraemer, mk.maddin@gmail.com
-# description: YAML configuration file - holding predefined sensors
+# description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
 
 number:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
 #    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>

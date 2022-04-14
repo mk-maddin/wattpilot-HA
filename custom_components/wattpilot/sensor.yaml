@@ -1,6 +1,6 @@
 # version: 2021.12.19
 # author: Martin Kraemer, mk.maddin@gmail.com
-# description: YAML configuration file - holding predefined sensors
+# description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
 
 sensor:
@@ -8,6 +8,7 @@ sensor:
 #  - source: <property / attribute>
 #    id: <name of the charger attribute or prop to read>
 #    name: <optional: name of the sensor within HA>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>
 #    enabled: <optional: if set to False entity is by default disabled>
