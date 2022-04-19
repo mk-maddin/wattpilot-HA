@@ -1,0 +1,12 @@
+# version: 2021.10.18
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: home assistant configuration file - yaml structure
+# 	the topic this file handles is described by its filename
+
+input_datetime:
+  
+  wattpilot_next_trip_timing:
+      name: Next Trip
+      has_date: false
+      has_time: true
+

@@ -1,6 +1,6 @@
 # local files/folders
 dev/
-packages/
+#packages/
 HomeAssistant_ManualInstall.sh
 
 # Byte-compiled / optimized / DLL files

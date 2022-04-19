@@ -1,0 +1,10 @@
+# version: 2021.08.22
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: homeassistant package
+#       requires:
+#       notes: 
+
+logger:
+  logs:
+    custom_components.wattpilot: debug
+    wattpilot: debug

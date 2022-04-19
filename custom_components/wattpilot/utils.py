@@ -11,14 +11,19 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import (
+    CONF_FRIENDLY_NAME,
+    CONF_IP_ADDRESS,        
     CONF_PARAMS,
 )
 
 from .const import (
     CONF_CHARGER,
     CONF_DBG_PROPS,
+    DEFAULT_NAME,    
     CONF_PUSH_ENTITIES,
     DOMAIN,
+    EVENT_PROPS_ID,
+    EVENT_PROPS,
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -74,7 +79,17 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         entity=entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
         if not entity is None:
             hass.async_create_task(entity.async_local_push(value))
-        
+
+        if identifier in EVENT_PROPS:
+            charger_id = str(entry_data[CONF_PARAMS].get(CONF_FRIENDLY_NAME, entry_data[CONF_PARAMS].get(CONF_IP_ADDRESS, DEFAULT_NAME)))
+            data = {
+              "charger_id": charger_id,
+              "entry_id": entry_id,
+              "property": identifier,
+              "value": value
+                    }
+            hass.bus.fire(EVENT_PROPS_ID,data)
+
         if entry_data.get(CONF_DBG_PROPS, False):
             hass.async_create_task(async_PropertyDebug(identifier, value))
     except Exception as e:

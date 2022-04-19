@@ -23,7 +23,8 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 - start / stop charging
 - configuration for different charging behaviours
 - sensors for charging box status
-- next trip timing configuration via service call
+- next trip timing configuration via service call (& event when next trip timing value is changed)
+	-> you can create an [input_datetime (example)](packages/wattpilot/wattpilot_input_datetime.yaml) entity & corresponding [automation (example)](packages/wattpilot/wattpilot_automation.yaml) which ensures the input_datetime is in sync with the setting wihtin your wattpilot charger
 - log value changes for properties of the wallbox as warnings (enable/disable via service call)
 - can enable/disable e-go cloud charging API (enable/disable via service call)
 	-> this is at your own responsibility - is not clear if fronius/you "pay" in some way for the e-go cloud API and thus are legally allowed to use

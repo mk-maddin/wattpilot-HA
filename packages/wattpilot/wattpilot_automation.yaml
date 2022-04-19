@@ -1,0 +1,55 @@
+# version: 2022.03.03
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: home assistant configuration file - yaml structure
+# 	the topic this file handles is described by its filename
+
+automation:
+
+  - id: wattpilot_sync_nexttrip
+    alias: wattpilot_sync_nexttrip
+    description: 'Sync next trip information of wattpilot to input_datetime'
+    mode: queued
+    trigger:
+      - id: 'set_value'
+        platform: state
+        entity_id: input_datetime.wattpilot_next_trip_timing
+      - id: 'get_value'
+        platform: event
+        event_type: 'wattpilot_property_message'
+        event_data:
+#          charger_id: "Wattpilot" #if you have multiple chargers you can define here which charger to hanlde with this input_datetime
+          property: "ftt" #ftt is the property name of nexttrip timing
+    action:
+      - variables:
+          input_dt: 'input_datetime.wattpilot_next_trip_timing'
+          device_id: 46685168f8c86080645840dd194e2f06 #PLEASE CHANGE: device_id of your charger
+      - choose:
+          - conditions:      
+              - condition: trigger
+                id: 'set_value'
+            sequence:
+              - service: wattpilot.set_next_trip
+                data_template:
+                  device_id: "{{ device_id }}"
+                  trigger_time: "{{ states(input_dt) | string }}"
+          - conditions:      
+              - condition: trigger
+                id: 'get_value'
+            sequence:
+              - service: input_datetime.set_datetime
+                data_template:
+                  entity_id: "{{ input_dt }}"
+                  #timestamp with daylight saving time handling
+                  timestamp: >-
+                    {% set timestamp=trigger.event.data.value %}
+                    {% if now().timetuple().tm_isdst == 1 %}
+                      {% set timestamp=timestamp-3600 %}
+                    {% endif %}
+                    {{ timestamp }}
+        default:
+          - service: system_log.write
+            data_template:
+              message: "Unhandled trigger: {{ trigger }}"
+              logger: homeassistant.components.automation.wattpilot_sync_nexttrip
+              level: error
+
