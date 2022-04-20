@@ -145,7 +145,7 @@ class ChargerPlatformEntity(Entity):
         elif self._source == 'attribute' and not hasattr(self._charger, self._identifier):
             _LOGGER.debug("%s - %s: available: false because unknown attribute", self._charger_id, self._identifier)
             return False
-        elif self._source == 'property' and async_GetChargerProp(self._charger, self._identifier) is None:
+        elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
             _LOGGER.debug("%s - %s: available: false because unknown property", self._charger_id, self._identifier)            
             return False
         else:
