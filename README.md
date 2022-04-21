@@ -57,11 +57,6 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 # Installation and Configuration
 
-## Prerequisites
-At the moment you will have to install the [wattpilot python module](https://github.com/joscha82/wattpilot) manually to your HA instance in advance.
-It is not uploaded to PyPI yet, but I have opened a [corresponding request](https://github.com/joscha82/wattpilot/issues/3)
-As soon as it is available there, the module will be installed automatically.
-
 ## Installation
 Download the repository and save the "wattpilot" folder into your home assistant custom_components directory.
 
