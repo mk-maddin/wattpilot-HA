@@ -31,6 +31,30 @@ number:
     mode: slider
     device_class: current
 
+  - id: awp
+    set_type: float
+    name: "Max Price"
+    description: "Lumina Strom/aWattar maximum price in cent"
+    #icon: "mdi:"
+    min_value: 0
+    max_value: 99999
+    step: 1
+    entity_category: config
+
+#  - id: fmt
+#    set_type: int
+#    name: "Min Charging"
+
+#  - id: fst
+#    set_type: float
+#    name: "Start Chargig at"
+#    description: "PV Surplus start charging power"
+#    #icon: "mdi:"
+#    min_value: 0
+#    max_value: 99999
+#    step: 1
+#    entity_category: config
+
   - id: fte
     set_type: float
     name: "Next Trip Charging"

@@ -6,7 +6,8 @@
 select:
 
 #  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
-#    options_id: <id of the enum attribute which contains the options as values (not keys!) - this ALWAYS has to be a property, not attribute>
+#    options: <id of the enum attribute which contains the options as values (not keys!) - this ALWAYS has to be a property, not attribute>
+#                <alternative: dict with enum for options>
 #    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
@@ -14,14 +15,62 @@ select:
 #    enabled: <optional: if set to False entity is by default disabled>
 #    entity_category: <optional: key within HA>
 
+  - id: acs
+    name: "Access Control"
+    options:
+      0: "Open"
+      1: "Authentication Required"
+    description: "Access control user setting"
+    #icon: "mdi:"
+    entity_category: config
+
+  - id: awc
+    name: "Awattar Country"
+    options:
+      0: "Austria"
+      1: "Germany"
+    description: "Lumina Strom/aWattar country"
+    #icon: "mdi:"
+    entity_category: config
+
   - id: lmo
-    options_id: lmoValues
+    options: lmoValues
     name: "Charging Mode"
     description: "Charging mode Default, Eco or Next Trip"
     icon: "mdi:leaf"
 
+  - id: lot
+    name: "Load Balancing"
+    options:
+      0: "Static"
+      1: "Dynamic"
+    description: "Load Balancing Type"
+    #icon: "mdi:"
+    enabled: False
+    entity_category: config
+
+  - id: psm
+    name: "Phase Switch"
+    options:
+      0: "Auto"
+      1: "1 Phase"
+      2: "3 Phases"
+    description: "Choose how the charger switches phases"
+    #icon: "mdi:"
+    entity_category: config
+
+  - id: tds
+    name: "Daylight Saving"
+    options:
+      0: "None"
+      1: "EuropeanSummerTime"
+      2: "UsDaylightTime"      
+    description: "Timezone daylight saving mode"
+    #icon: "mdi:"
+    entity_category: config
+
   - id: ust
-    options_id: ustValues
+    options: ustValues
     name: "Cable unlock"
     description: "Lock cable when the car is connected (Normal), while the car is charging (AutoUnlock) or (AlwaysLock)"
     icon: "mdi:lock-outline"

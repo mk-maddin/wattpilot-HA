@@ -92,9 +92,12 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
 
     def _init_platform_specific(self):
         """Platform specific init actions"""
-        self._opt_identifier = self._entity_cfg.get('options_id', None)
+        self._opt_identifier = self._entity_cfg.get('options', None)
         #_LOGGER.debug("%s - %s: __init__ opt_identifier: %s)", self._charger_id, self._identifier, self._opt_identifier)
-        self._opt_dict = getattr(self._charger,self._opt_identifier,list(STATE_UNKNOWN))
+        if type(self._opt_identifier) is dict:
+            self._opt_dict = self._opt_identifier
+        else:
+            self._opt_dict = getattr(self._charger,self._opt_identifier,list(STATE_UNKNOWN))
         #_LOGGER.debug("%s - %s: __init__ opt_enum: %s)", self._charger_id, self._identifier, self._opt_dict) 
         if not self._opt_dict == STATE_UNKNOWN:
             self._attr_options = list(self._opt_dict.values())

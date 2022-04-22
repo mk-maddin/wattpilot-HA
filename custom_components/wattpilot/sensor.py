@@ -68,8 +68,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             elif not 'source' in entity_cfg or entity_cfg['source'] is None:
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
-            #entity=ChargerSensor(hass, entry, entity_cfg, charger)
-            entity=ChargerPlatformEntity(hass, entry, entity_cfg, charger)
+            entity=ChargerSensor(hass, entry, entity_cfg, charger)
+            #entity=ChargerPlatformEntity(hass, entry, entity_cfg, charger)
             entites.append(entity)
             if entity._source == 'property':
                 push_entities[entity._identifier]=entity
@@ -84,6 +84,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities(entites)
 
 
-#class ChargerSensor(ChargerPlatformEntity):
-#    """Sensor class for Fronius Wattpilot integration."""
+class ChargerSensor(ChargerPlatformEntity):
+    """Sensor class for Fronius Wattpilot integration."""
+
+    def _init_platform_specific(self):
+        """Platform specific init actions"""
+        self._state_enum = self._entity_cfg.get('enum', None)
+        if not self._state_enum is None:
+           self._state_enum = dict(self._state_enum)
+
+    async def _async_update_validate_platform_state(self, state=None):
+        """Async: Validate the given state for sensor specific requirements"""
+        try:
+            if self._state_enum is None:
+                pass
+            elif state in list(self._state_enum.keys()):
+                state = self._state_enum[state]
+            elif state in list(self._state_enum.values()):
+                pass
+            else:
+                _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: state %s not within enum values: %s", self._charger_id, self._identifier, state, self._state_enum)
+            return state
+        except Exception as e:
+            _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            return None
 
