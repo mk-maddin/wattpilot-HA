@@ -218,18 +218,29 @@ class ChargerPlatformEntity(Entity):
                     _LOGGER.error("%s - %s: _async_update_validate_property failed: please specific the 'value_id' to use as state value", self._charger_id, self._identifier) 
                     return None
                 state = getattr(namespace,self._entity_cfg.get('value_id',STATE_UNKNOWN),STATE_UNKNOWN)
-                _LOGGER.debug("%s - %s: _async_update_validate_property: new state: %s", self._charger_id, self._identifier, state)
+                #_LOGGER.debug("%s - %s: _async_update_validate_property: new state: %s", self._charger_id, self._identifier, state)
                 for attr_id in self._entity_cfg.get('attribute_ids', None):
-                    _LOGGER.debug("%s - %s: _async_update_validate_property: adding attribute: %s", self._charger_id, self._identifier, attr_id)
-                    self._attributes[attr_id] = getattr(namespace,attr_id,STATE_UNKNOWN)
+                    #_LOGGER.debug("%s - %s: _async_update_validate_property: adding attribute: %s", self._charger_id, self._identifier, attr_id)
+                    self._attributes[attr_id]=getattr(namespace,attr_id,STATE_UNKNOWN)
             elif isinstance(state, list):
                 _LOGGER.debug("%s - %s: _async_update_validate_property: process list value", self._charger_id, self._identifier)
                 state_list=state
-                state=state_list[0]
-                i=1
-                for attr_state in state_list[1:]:
-                    self._attributes['state'+str(i)]=attr_state
-                    i=i+1
+                if self._entity_cfg.get('value_id', None) is None:
+                    _LOGGER.debug("%s - %s: _async_update_validate_property: process list value by indexes", self._charger_id, self._identifier)
+                    state=state_list[0]
+                    i=1
+                    for attr_state in state_list[1:]:
+                        self._attributes['state'+str(i)]=attr_state
+                        i=i+1
+                else:
+                    _LOGGER.debug("%s - %s: _async_update_validate_property: process list value by given attributes", self._charger_id, self._identifier)
+                    state=state_list[int(self._entity_cfg.get('value_id', 0))]
+                    #_LOGGER.debug("%s - %s: _async_update_validate_property: new state: %s", self._charger_id, self._identifier, state)
+                    for attr_entry in self._entity_cfg.get('attribute_ids', None):
+                        attr_id=attr_entry.split(':')[0]
+                        #_LOGGER.debug("%s - %s: _async_update_validate_property: adding attribute: %s", self._charger_id, self._identifier, attr_id)
+                        attr_index=attr_entry.split(':')[1]
+                        self._attributes[attr_id]=state_list[int(attr_index)]
             return state
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_property failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

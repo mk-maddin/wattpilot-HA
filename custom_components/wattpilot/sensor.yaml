@@ -120,7 +120,7 @@ sensor:
       23: "Reserved23"
       24: "Reserved24"
     description: "Internal error state - values are: 'None', 'FiAc', 'FiDc', 'Phase', 'Overvolt', 'Overamp', 'Diode', 'PpInvalid', 'GndInvalid', 'ContactorStuck', 'ContactorMiss', 'FiUnknown', 'Unknown', 'Overtemp', 'NoComm', 'StatusLockStuckOpen', 'StatusLockStuckLocked', 'Reserved20', 'Reserved21', 'Reserved22', 'Reserved23', 'Reserved24'"
-    #icon: "mdi:"
+    icon: "mdi:alert-circle"
     entity_category: diagnostic
 
   - source: property
@@ -144,7 +144,7 @@ sensor:
       4: "LockFailed"
       5: "LockUnlockPowerout"      
     description: "Actual lock feedback - values are: 'Unknown', 'Unlocked', 'UnlockFailed', 'Locked', 'LockFailed', 'LockUnlockPowerout'"
-    #icon: "mdi:"
+    icon: "mdi:lock-reset"
     enabled: False
     entity_category: diagnostic
 
@@ -157,7 +157,7 @@ sensor:
       2: "AlwaysLock"
       3: "ForceUnlock"
     description: "Lock setting, as sent to Charge Ctrl - values are: 'Normal', 'AutoUnlock', 'AlwaysLock', 'ForceUnlock'"
-    #icon: "mdi:"
+    icon: "mdi:lock"
     enabled: False
     entity_category: diagnostic
 
@@ -199,8 +199,33 @@ sensor:
       23: "NotChargingBecausePhaseSwitch"
       24: "NotChargingBecauseMinPauseDuration"      
     description: "Reason why we allow charging or not right now - values are listed at: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md -> modelStatus"
-    #icon: "mdi:"
+    icon: "mdi:ev-station"
     entity_category: diagnostic
+
+  - source: property
+    id: nrg
+    name: "Charging Energy"
+    description: "Charging energy used for current car charging process"
+    icon: "mdi:lightning-bolt-circle"
+    device_class: power
+    value_id: 11
+    attribute_ids:
+      - L1_Voltage:0
+      - L2_Voltage:1
+      - L3_Voltage:2
+      - N_Voltage:3
+      - L1_Ampere:4
+      - L2_Ampere:5
+      - L3_Ampere:6
+      - L1_Power:7
+      - L2_Power:8
+      - L3_Power:9
+      - N_Power:10
+      - TotalPower:11
+      - L1_PowerRelative:12
+      - L2_PowerRelative:13
+      - L3_PowerRelative:14
+      - N_PowerRelative:15
 
   - source: property
     id: qsw
@@ -214,7 +239,7 @@ sensor:
     id: rbc
     name: "Reboot Counter"
     description: "Counts the number of boot operations."
-    #icon: "mdi:web-sync"
+    icon: "mdi:restart"
     enabled: False
     entity_category: diagnostic
 
@@ -222,7 +247,7 @@ sensor:
     id: rbt
     name: "Reboot Timer"
     description: "Counts the milliseconds since the last boot. Expires after 49 days, increasing the reboot_counter."
-    #icon: "mdi:web-sync"
+    icon: "mdi:av-time"
     enabled: False
     unit_of_measurement: "ms"
     entity_category: diagnostic
@@ -286,7 +311,7 @@ sensor:
       9: "DISCONNECTING"
       10: "NO_SHIELD"      
     description: "WiFi status - values are: 'IDLE_STATUS', 'NO_SSID_AVAIL', 'SCAN_COMPLETED', 'CONNECTED', 'CONNECT_FAILED', 'CONNECTION_LOST', 'DISCONNECTED', 'CONNECTING', 'DISCONNECTING', 'NO_SHIELD'"
-    #icon: "mdi:"
+    icon: "mdi:wifi-settings"
     enabled: False
     entity_category: diagnostic
 

@@ -21,7 +21,7 @@ select:
       0: "Open"
       1: "Authentication Required"
     description: "Access control user setting"
-    #icon: "mdi:"
+    icon: "mdi:access-point-check"
     entity_category: config
 
   - id: awc
@@ -30,7 +30,7 @@ select:
       0: "Austria"
       1: "Germany"
     description: "Lumina Strom/aWattar country"
-    #icon: "mdi:"
+    icon: "mdi:map-marker"
     entity_category: config
 
   - id: lmo
@@ -45,7 +45,7 @@ select:
       0: "Static"
       1: "Dynamic"
     description: "Load Balancing Type"
-    #icon: "mdi:"
+    icon: "mdi:scale-balance"
     enabled: False
     entity_category: config
 
@@ -56,7 +56,7 @@ select:
       1: "1 Phase"
       2: "3 Phases"
     description: "Choose how the charger switches phases"
-    #icon: "mdi:"
+    icon: "mdi:car-3-plus"
     entity_category: config
 
   - id: tds
@@ -66,7 +66,7 @@ select:
       1: "EuropeanSummerTime"
       2: "UsDaylightTime"      
     description: "Timezone daylight saving mode"
-    #icon: "mdi:"
+    icon: "mdi:map-clock"
     entity_category: config
 
   - id: ust

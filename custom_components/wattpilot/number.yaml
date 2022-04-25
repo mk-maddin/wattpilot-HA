@@ -35,25 +35,32 @@ number:
     set_type: float
     name: "Max Price"
     description: "Lumina Strom/aWattar maximum price in cent"
-    #icon: "mdi:"
+    icon: "mdi:cash-100"
     min_value: 0
     max_value: 99999
     step: 1
     entity_category: config
 
-#  - id: fmt
-#    set_type: int
-#    name: "Min Charging"
+  - id: fmt
+    set_type: int
+    name: "Min Charging Time"
+    description: "Minimum charging time after the charging has started"
+    icon: "mdi:car-clock"
+    min_value: 30000
+    step: 30000
+    unit_of_measurement: "ms"
+    entity_category: config
 
-#  - id: fst
-#    set_type: float
-#    name: "Start Chargig at"
-#    description: "PV Surplus start charging power"
-#    #icon: "mdi:"
-#    min_value: 0
-#    max_value: 99999
-#    step: 1
-#    entity_category: config
+  - id: fst
+    set_type: float
+    name: "Start Chargig at"
+    description: "PV Surplus start charging power"
+    icon: "mdi:solar-power"
+    min_value: 1320
+    step: 1
+    unit_of_measurement: "W"
+    device_class: power
+    entity_category: config
 
   - id: fte
     set_type: float

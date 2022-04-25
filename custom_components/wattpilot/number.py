@@ -92,10 +92,16 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     
     def _init_platform_specific(self):
         """Platform specific init actions"""
-        self._min = float(self._entity_cfg.get('min_value', None))
-        self._max = float(self._entity_cfg.get('max_value', None))
-        self._step = float(self._entity_cfg.get('step', None))
-        self._mode = self._entity_cfg.get('mode', None)
+        self._min=self._entity_cfg.get('min_value', None)
+        if not self._min is None:
+            self._min=float(self._min)
+        self._max=self._entity_cfg.get('max_value', None)
+        if not self._max is None:
+            self._max=float(self._max)
+        self._step=self._entity_cfg.get('step', None)
+        if not self._step is None:
+            self._step=float(self._step)
+        self._mode=self._entity_cfg.get('mode', None)
 
 
     @property

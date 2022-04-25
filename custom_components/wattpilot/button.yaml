@@ -29,16 +29,19 @@ button:
     set_value: 0
     name: "Start Charging"
     description: "Manually start the charging process"
+    icon: "mdi:play"
 
   - id: frc
     uid: frc1
     set_value: 1
     name: "Stop Charging"
     description: "Manually stop the charging process"
+    icon: "mdi:stop"
 
   - id: frc
     uid: frc2
     set_value: 2
     name: "Start Charging Force"
     description: "Force the charging start (required for some vehicles instead of normal start)"
+    icon: "mdi:play-circle-outline"
 
