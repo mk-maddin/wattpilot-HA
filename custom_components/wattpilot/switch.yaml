@@ -16,7 +16,7 @@ switch:
 #    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
 
-  - id: alw
+  - id: fup
     name: "PV Surplus"
     description: "Use photovoltaik surplus energy to charge your car."
     icon: "mdi:solar-power"
