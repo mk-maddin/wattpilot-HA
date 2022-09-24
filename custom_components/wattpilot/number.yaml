@@ -11,9 +11,9 @@ number:
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>
-#    min_value: <optional: the minimum accepted value>
-#    max_value: <optional: the maximum accepted value>
-#    step: <optional: Defines the resolution of the values, i.e. the smallest increment or decrement>
+#    native_min_value: <optional: the minimum accepted value>
+#    native_max_value: <optional: the maximum accepted value>
+#    native_step: <optional: Defines the resolution of the values, i.e. the smallest increment or decrement>
 #    mode: <optional: Defines how the number should be displayed in the UI. 'auto', 'box' or 'slider'
 #    enabled: <optional: if set to False entity is by default disabled>
 #    device_class: <optional: key within HA>
@@ -25,9 +25,9 @@ number:
     name: "Charging Power"
     description: "Charging range per Hour"
     icon: "mdi:car-electric"
-    min_value: 6.0
-    max_value: 16.0
-    step: 1.0
+    native_min_value: 6.0
+    native_max_value: 16.0
+    native_step: 1.0
     mode: slider
     device_class: current
 
@@ -36,9 +36,9 @@ number:
     name: "Max Price"
     description: "Lumina Strom/aWattar maximum price in cent"
     icon: "mdi:cash-100"
-    min_value: 0
-    max_value: 99999
-    step: 1
+    native_min_value: 0
+    native_max_value: 99999
+    native_step: 1
     entity_category: config
 
   - id: fmt
@@ -46,9 +46,9 @@ number:
     name: "Min Charging Time"
     description: "Minimum charging time after the charging has started"
     icon: "mdi:car-clock"
-    min_value: 30000
-    step: 30000
-    unit_of_measurement: "ms"
+    native_min_value: 30000
+    native_step: 30000
+    native_unit_of_measurement: "ms"
     entity_category: config
 
   - id: fst
@@ -56,9 +56,9 @@ number:
     name: "Start Chargig at"
     description: "PV Surplus start charging power"
     icon: "mdi:solar-power"
-    min_value: 1320
-    step: 1
-    unit_of_measurement: "W"
+    native_min_value: 1320
+    native_step: 1
+    native_unit_of_measurement: "W"
     device_class: power
     entity_category: config
 
@@ -67,9 +67,9 @@ number:
     name: "Next Trip Charging"
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
     icon: "mdi:road-variant"
-    min_value: 100.0
-    max_value: 50000.0
-    step: 10.0
+    native_min_value: 100.0
+    native_max_value: 50000.0
+    native_step: 10.0
     device_class: energy
-    unit_of_measurement: "Wh"
+    native_unit_of_measurement: "Wh"
 

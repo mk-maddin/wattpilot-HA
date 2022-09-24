@@ -208,7 +208,7 @@ sensor:
     description: "Charging energy used for current car charging process"
     icon: "mdi:lightning-bolt-circle"
     device_class: power
-    unit_of_measurement: "W"
+    unit_of_measurement: W
     value_id: 11
     attribute_ids:
       - L1_Voltage:0

@@ -186,7 +186,7 @@ class ChargerPlatformEntity(Entity):
             default_model=GetChargerProp(self._charger,'typ',getattr(self._charger,'devicetype',STATE_UNKNOWN)),
             default_name=getattr(self._charger,'name',getattr(self._charger,'hostname',STATE_UNKNOWN)),
             sw_version=getattr(self._charger,'firmware',STATE_UNKNOWN),
-            configuration_url=getattr(self._charger,'url',STATE_UNKNOWN)
+            #configuration_url=getattr(self._charger,'url',STATE_UNKNOWN)
         )
         #_LOGGER.debug("%s - %s: device_info result: %s", self._charger_id, self._identifier, info)
         return info
