@@ -92,34 +92,34 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     
     def _init_platform_specific(self):
         """Platform specific init actions"""
-        self._min=self._entity_cfg.get('min_value', None)
-        if not self._min is None:
-            self._min=float(self._min)
-        self._max=self._entity_cfg.get('max_value', None)
-        if not self._max is None:
-            self._max=float(self._max)
-        self._step=self._entity_cfg.get('step', None)
-        if not self._step is None:
-            self._step=float(self._step)
+        self._native_min=self._entity_cfg.get('native_min_value', None)
+        if not self._native_min is None:
+            self._native_min=float(self._native_min)
+        self._native_max=self._entity_cfg.get('native_max_value', None)
+        if not self._native_max is None:
+            self._native_max=float(self._native_max)
+        self._native_step=self._entity_cfg.get('native_step', None)
+        if not self._native_step is None:
+            self._native_step=float(self._native_step)
         self._mode=self._entity_cfg.get('mode', None)
 
 
     @property
-    def min_value(self) -> float | None:
+    def native_min_value(self) -> float | None:
         """Return the minimum accepted value (inclusive) for this entity."""
-        return self._min
+        return self._native_min
 
 
     @property
-    def max_value(self) -> float | None:
+    def native_max_value(self) -> float | None:
         """Return the maximum accepted value (inclusive) for this entity."""
-        return self._max
+        return self._native_max
 
 
     @property
-    def step(self) -> float | None:
+    def native_step(self) -> float | None:
         """Return the resolution of the values for this entity."""
-        return self._step
+        return self._native_step
 
 
     @property
@@ -128,12 +128,12 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         return self._mode
 
 
-    async def async_set_value(self, value) -> None:
+    async def asyc_native_set_value(self, value) -> None:
         """Async: Change the current value."""
         try:
-            _LOGGER.debug("%s - %s: async_set_value: value was changed to: %s", self._charger_id, self._identifier, float)
+            _LOGGER.debug("%s - %s: asyc_native_set_value: value was changed to: %s", self._charger_id, self._identifier, float)
             if (self._identifier == 'fte'):
-                _LOGGER.debug("%s - %s: async_set_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
+                _LOGGER.debug("%s - %s: asyc_native_set_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
                 await async_SetChargerProp(self._charger,'esk',True)                 
             await async_SetChargerProp(self._charger,self._identifier,value,force_type=self._set_type)
         except Exception as e:
