@@ -34,14 +34,15 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 - create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 - create a light integration for LED color control etc.
-- option to directly reload component only
-- provide an integration picture
 - switch to enable/disable AP Mode/Hotspot of device
 	-> Did somebody find a corresponding functionality wihtin the Wattpilot APP?
 
 
 ## Known Errors:
 
+- the "Lock level selection" type has changed with firmware version 38.5 to SELECT where previously it was a SWITCH.
+  By default this repository is configured for firmware >= 38.5.
+  If you are running older version, please uncomment the area wihtin switch.yaml and comment the area wihtin select.yaml.
 - config_flow Options workflow (if you press "configure" button within Integrations view) does not work.
   WORKAROUND: If you want to change options remove and re-add the entity.
 
@@ -56,6 +57,9 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 ![screenshot of Next Trip service](doc/service_view1.jpg)
 
 # Installation and Configuration
+
+ATTENTION: Default configuration is for wattpilot firmware version > 38.5 !!
+	If you are using older firmware, please read "Known Errors" instructions.
 
 ## Installation
 Download the repository and save the "wattpilot" folder into your home assistant custom_components directory.

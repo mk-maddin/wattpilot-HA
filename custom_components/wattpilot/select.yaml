@@ -33,6 +33,18 @@ select:
     icon: "mdi:map-marker"
     entity_category: config
 
+# IN FIRMWARE < 38.5 this was a switch (ON/OFF) value
+# IN FIRMWARE >= 38.5 this is a select (Always locked/Locked when car is connected/Never locked) value
+  - id: bac
+    name: "Lock level selection"
+    options:
+      0: "Always locked"
+      1: "Locked when car is connected"
+#      2: "Unknown Value"
+      3: "Never locked"
+    description: "Locks the button on the device so that changing the current level is not possible"
+    icon: "mdi:account-cancel"
+
   - id: lmo
     options: lmoValues
     name: "Charging Mode"

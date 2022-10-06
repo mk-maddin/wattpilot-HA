@@ -22,11 +22,13 @@ switch:
     icon: "mdi:solar-power"
     entity_category: config
 
-  - id: bac
-    name: "Lock level selection"
-    description: "Locks the button on the device so that changing the current level is not possible"
-    icon: "mdi:account-cancel"
-    invert: True
+# IN FIRMWARE < 38.5 this was a switch (ON/OFF) value
+# IN FIRMWARE >= 38.5 this is a select (Always locked/Locked when car is connected/Never locked) value
+#  - id: bac
+#    name: "Lock level selection"
+#    description: "Locks the button on the device so that changing the current level is not possible"
+#    icon: "mdi:account-cancel"
+#    invert: True
 
   - id: fap
     name: "Charge Pause"
