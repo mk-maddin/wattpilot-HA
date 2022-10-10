@@ -128,12 +128,12 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         return self._mode
 
 
-    async def asyc_native_set_value(self, value) -> None:
+    async def async_set_native_value(self, value) -> None:
         """Async: Change the current value."""
         try:
-            _LOGGER.debug("%s - %s: asyc_native_set_value: value was changed to: %s", self._charger_id, self._identifier, float)
+            _LOGGER.debug("%s - %s: async_set_native_value: value was changed to: %s", self._charger_id, self._identifier, float)
             if (self._identifier == 'fte'):
-                _LOGGER.debug("%s - %s: asyc_native_set_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
+                _LOGGER.debug("%s - %s: async_set_native_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
                 await async_SetChargerProp(self._charger,'esk',True)                 
             await async_SetChargerProp(self._charger,self._identifier,value,force_type=self._set_type)
         except Exception as e:
