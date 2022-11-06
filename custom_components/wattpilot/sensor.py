@@ -90,8 +90,14 @@ class ChargerSensor(ChargerPlatformEntity):
     def _init_platform_specific(self):
         """Platform specific init actions"""
         self._state_enum = self._entity_cfg.get('enum', None)
+        self._state_class = self._entity_cfg.get('state_class', None)
         if not self._state_enum is None:
            self._state_enum = dict(self._state_enum)
+
+    @property
+    def state_class(self) -> str | None:
+        """Return the state_class of the entity."""
+        return self._state_class
 
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""

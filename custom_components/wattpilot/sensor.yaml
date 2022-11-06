@@ -13,6 +13,7 @@ sensor:
 #    icon: <optional: key within HA>
 #    enabled: <optional: if set to False entity is by default disabled>
 #    device_class: <optional: key within HA>
+#    state_class: <optional: key within HA>
 #    unit_of_measurement: <optional: key within HA>
 #    entity_category: <optional: key within HA>
 #    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
@@ -129,9 +130,10 @@ sensor:
     description: "Totally charged power"
     #icon: "mdi:meter-electric" #not available (yet)
     icon: "mdi:ev-station"
-    device_class: power
+    device_class: energy
     unit_of_measurement: "Wh"
     entity_category: diagnostic
+    state_class: total
 
   - source: property
     id: ffb

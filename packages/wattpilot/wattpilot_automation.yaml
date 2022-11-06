@@ -36,20 +36,28 @@ automation:
               - condition: trigger
                 id: 'get_value'
             sequence:
-              - service: input_datetime.set_datetime
-                data_template:
-                  entity_id: "{{ input_dt }}"
-                  #timestamp with daylight saving time handling
-                  timestamp: >-
-                    {% set timestamp=trigger.event.data.value %}
-                    {% if now().timetuple().tm_isdst == 1 %}
-                      {% set timestamp=timestamp-3600 %}
-                    {% endif %}
-                    {{ timestamp }}
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: >-
+                          {# check if new and old value are already matching #}
+                          {% set current = (as_timestamp(today_at(states(input_dt))) - as_timestamp(today_at('00:00'))) | int %}
+                          {% set new = trigger.event.data.value %}
+                          {{ not new == current }}
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        data_template:
+                          entity_id: "{{ input_dt }}"
+                          timestamp: "{{ trigger.event.data.value }}"
+                default:
+                  - service: system_log.write
+                    data_template:
+                      message: "Values of input_datetime & wattpilot already match: {{ trigger.event.data.value }}"
+                      logger: homeassistant.components.automation.wattpilot_sync_nexttrip
+                      level: debug
         default:
           - service: system_log.write
             data_template:
               message: "Unhandled trigger: {{ trigger }}"
               logger: homeassistant.components.automation.wattpilot_sync_nexttrip
               level: error
-
