@@ -132,7 +132,7 @@ sensor:
     icon: "mdi:ev-station"
     device_class: energy
     unit_of_measurement: "Wh"
-    entity_category: diagnostic
+    #entity_category: diagnostic
     state_class: total
 
   - source: property

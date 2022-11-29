@@ -98,6 +98,14 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         self._native_max=self._entity_cfg.get('native_max_value', None)
         if not self._native_max is None:
             self._native_max=float(self._native_max)
+        elif self._identifier == 'amp':
+            _LOGGER.debug("%s - %s: _init_platform_specific: %s: decide native_max_value based on model variant", self._charger_id, self._identifier, self._name)
+            variant=getattr(self._charger,'var',11)
+            _LOGGER.debug("%s - %s: _init_platform_specific: %s: model variant is: %s", self._charger_id, self._identifier, self._name, variant
+            if variant == 22 or variant == '22':
+                self._native_max=float(32)
+            else:
+                self._native_max=float(16)
         self._native_step=self._entity_cfg.get('native_step', None)
         if not self._native_step is None:
             self._native_step=float(self._native_step)

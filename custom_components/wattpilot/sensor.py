@@ -9,6 +9,7 @@ import os
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.components.sensor import SensorStateClass
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.const import (
@@ -91,12 +92,25 @@ class ChargerSensor(ChargerPlatformEntity):
         """Platform specific init actions"""
         self._state_enum = self._entity_cfg.get('enum', None)
         self._state_class = self._entity_cfg.get('state_class', None)
+        if not self._state_class is None:
+            self._state_class = self._state_class.lower()
+            _LOGGER.debug("%s - %s: _init_platform_specific: specified state_class is: %s)", self._charger_id, self._identifier, self._state_class)
+            if self._state_class == 'measurement':
+                self._state_class = SensorStateClass.MEASUREMENT
+            elif self._state_class == 'total': 
+                self._state_class = SensorStateClass.TOTAL
+            elif self._state_class == 'total_increasing': 
+                self._state_class = SensorStateClass.TOTAL_INCREASING
+            else:
+                _LOGGER.warning("%s - %s: _init_platform_specific: invalid state_class defined: %s", self._charger_id, self._identifier, self._state_class)
+                self._state_class = None
         if not self._state_enum is None:
            self._state_enum = dict(self._state_enum)
 
     @property
-    def state_class(self) -> str | None:
+    def state_class(self) -> SensorStateClass | None:
         """Return the state_class of the entity."""
+        _LOGGER.debug("%s - %s: state_class: property requested)", self._charger_id, self._identifier)
         return self._state_class
 
     async def _async_update_validate_platform_state(self, state=None):

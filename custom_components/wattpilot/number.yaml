@@ -26,7 +26,7 @@ number:
     description: "Charging range per Hour"
     icon: "mdi:car-electric"
     native_min_value: 6.0
-    native_max_value: 16.0
+    #native_max_value: 16.0 # different for 11KW vs 22KW model
     native_step: 1.0
     mode: slider
     device_class: current
