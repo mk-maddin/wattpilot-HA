@@ -101,7 +101,7 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         elif self._identifier == 'amp':
             _LOGGER.debug("%s - %s: _init_platform_specific: %s: decide native_max_value based on model variant", self._charger_id, self._identifier, self._name)
             variant=getattr(self._charger,'var',11)
-            _LOGGER.debug("%s - %s: _init_platform_specific: %s: model variant is: %s", self._charger_id, self._identifier, self._name, variant
+            _LOGGER.debug("%s - %s: _init_platform_specific: %s: model variant is: %s", self._charger_id, self._identifier, self._name, variant)
             if variant == 22 or variant == '22':
                 self._native_max=float(32)
             else:
