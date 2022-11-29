@@ -34,6 +34,7 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 - create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 - create a light integration for LED color control etc.
+- OCPP values support
 - switch to enable/disable AP Mode/Hotspot of device
 	-> Did somebody find a corresponding functionality wihtin the Wattpilot APP?
 
