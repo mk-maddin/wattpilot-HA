@@ -181,9 +181,9 @@ class ChargerPlatformEntity(Entity):
         """Return a device description for device registry."""
         #_LOGGER.debug("%s - %s: device_info", self._charger_id, self._identifier)
         hw_ver=getattr(self._charger,'ver',STATE_UNKNOWN)
-        if hw_ver == 22 or '22':
+        if hw_ver == 22 or hw_ver == '22':
             hw_ver='22 KW'
-        elif hw_ver == 11 or '11':
+        elif hw_ver == 11 or hw_ver == '11':
             hw_ver='11 KW'
         info = DeviceInfo(
             identifiers={(DOMAIN, getattr(self._charger,'serial', GetChargerProp(self._charger,'sse',None)))},
