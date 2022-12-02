@@ -41,6 +41,17 @@ number:
     native_step: 1
     entity_category: config
 
+  - id: fam
+    set_type: int
+    name: "PV Battery threshold"
+    description: "Minimum battery level until PV Surplus charging is started"
+    icon: "mdi:battery-charging-medium"
+    native_min_value: 0
+    native_max_value: 100
+    native_step: 1
+    native_unit_of_measurement: "%"
+    entity_category: config
+
   - id: fmt
     set_type: int
     name: "Min Charging Time"
@@ -49,6 +60,17 @@ number:
     native_min_value: 30000
     native_step: 30000
     native_unit_of_measurement: "ms"
+    entity_category: config
+
+  - id: fot
+    set_type: int
+    name: "Ohmpilot threshold"
+    description: "Minimum water temperature until PV Surplus charging is started"
+    icon: "mdi:thermometer-water"
+    native_min_value: 0
+    native_max_value: 100
+    native_step: 1
+    native_unit_of_measurement: "°C"
     entity_category: config
 
   - id: fst
