@@ -113,6 +113,12 @@ class ChargerSensor(ChargerPlatformEntity):
         _LOGGER.debug("%s - %s: state_class: property requested)", self._charger_id, self._identifier)
         return self._state_class
 
+    @property
+    def capability_attributes(self):
+        if not self.state_class is None:
+            return {"state_class": self.state_class}
+
+
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         try:
