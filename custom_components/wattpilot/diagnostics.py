@@ -1,6 +1,7 @@
 """Diagnostics support for the Fronius Wattpilot integration."""
 
 from __future__ import annotations
+from importlib_metadata import version
 from typing import (
     Final,
     Any,
@@ -49,6 +50,13 @@ async def async_get_config_entry_diagnostics( hass: HomeAssistant, entry: Config
         diag["charger_properties"] = async_redact_data(charger.allProps, REDACT_ALLPROPS)
     except Exception as e:
         _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Adding charger properties to output failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+
+    try:
+        _LOGGER.debug("%s - async_get_config_entry_diagnostics %s: Add python module [wattpilot] version", entry.entry_id, platform)
+        diag["wattpilot_module"] = version('wattpilot')
+    except Exception as e:
+        _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Add python module [wattpilot] version failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     return diag
