@@ -29,14 +29,14 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 - can enable/disable e-go cloud charging API (enable/disable via service call)
 	-> this is at your own responsibility - is not clear if fronius/you "pay" in some way for the e-go cloud API and thus are legally allowed to use
 	-> as it is not required at the moment for the functionality of this component, I do not recommend to enable
+- enable / disable configuration Hotspot WiFi (Wattpilot_XYZ) - as of time of writing this is not possible via offical wattpilot app
 
 ## Open Topics:
 
 - create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
+- support renaming of default Hotspot Wifi (Text input component)
 - create a light integration for LED color control etc.
 - OCPP values support
-- switch to enable/disable AP Mode/Hotspot of device
-	-> Did somebody find a corresponding functionality wihtin the Wattpilot APP?
 
 ## Known Errors:
 
