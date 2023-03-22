@@ -20,7 +20,6 @@ Not me neither any of contributors to this or any prerequired/dependency project
 
 Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energy/installers-partners/technical-data/all-products/solutions/fronius-wattpilot/fronius-wattpilot/wattpilot-home-11-j) wallbox/electro vehicle charging devices via home assistant with the following features:
 
-<<<<<<< HEAD
 * charging mode change
 * start / stop charging
 * configuration for different charging behaviours
