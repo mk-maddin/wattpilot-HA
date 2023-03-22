@@ -38,33 +38,9 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 * the "Lock level selection" type has changed with firmware version 38.5 to SELECT where previously it was a SWITCH. By default this repository is configured for firmware >= 38.5. If you are running older version, please uncomment the area wihtin [switch.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/switch.yaml#L25) and comment the area wihtin [select.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/select.yaml#L36).
 * config_flow Options workflow (if you press "configure" button within Integrations view) does not work. WORKAROUND: If you want to change options remove and re-add the entity.
-=======
-- charging mode change
-- start / stop charging
-- configuration for different charging behaviours
-- sensors for charging box status
-- next trip timing configuration via service call (& event when next trip timing value is changed)
-	-> you can create an [input_datetime (example)](packages/wattpilot/wattpilot_input_datetime.yaml) entity & corresponding [automation (example)](packages/wattpilot/wattpilot_automation.yaml) which ensures the input_datetime is in sync with the setting wihtin your wattpilot charger
-- log value changes for properties of the wallbox as warnings (enable/disable via service call)
-- can enable/disable e-go cloud charging API (enable/disable via service call)
-	-> this is at your own responsibility - is not clear if fronius/you "pay" in some way for the e-go cloud API and thus are legally allowed to use
-	-> as it is not required at the moment for the functionality of this component, I do not recommend to enable
-- enable / disable configuration Hotspot WiFi (Wattpilot_XYZ) - as of time of writing this is not possible via offical wattpilot app
-
-## Open Topics:
-
-- create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
-- support renaming of default Hotspot Wifi (Text input component)
-- create a light integration for LED color control etc.
-- OCPP values support
-
-## Known Errors:
-
 - the "Lock level selection" type has changed with firmware version 38.5 to SELECT where previously it was a SWITCH.
   By default this repository is configured for firmware >= 38.5.
   If you are running older version, please uncomment the area wihtin [switch.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/switch.yaml#L25) and comment the area wihtin [select.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/select.yaml#L36).
-
->>>>>>> bc3f1fb2a98ed21deb4e6a3efb34ccd0bbc32f97
 
 # Screenshots
 
