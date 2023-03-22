@@ -5,7 +5,7 @@
 
 sensor:
 
-#  - source: <property / attribute>
+#  - source: <property / attribute / namespacelist>
 #    id: <name of the charger attribute or prop to read>
 #    name: <optional: name of the sensor within HA>
 #    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
@@ -17,6 +17,7 @@ sensor:
 #    unit_of_measurement: <optional: key within HA>
 #    entity_category: <optional: key within HA>
 #    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
+#    namespace_id: <required for namespacelist source objects: define which item from the list of namespaces should be used>
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
 #    enum: <optional dict to map states to enum values>
 
@@ -29,6 +30,117 @@ sensor:
     id: carConnected
     description: "State of the car plug - values are: 'no car', 'charging', 'ready','complete'"
     icon: "mdi:ev-plug-type2"
+
+  - source: namespacelist
+    id: cards_0
+    name: "ID Chip 0"
+    description: "charging ID chip/card 0 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 0
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_1
+    name: "ID Chip 1"
+    description: "charging ID chip/card 1 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 1
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_2
+    name: "ID Chip 2"
+    description: "charging ID chip/card 2 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 2
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_3
+    name: "ID Chip 3"
+    description: "charging ID chip/card 3 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 3
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_4
+    name: "ID Chip 4"
+    description: "charging ID chip/card 4 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 4
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_5
+    name: "ID Chip 5"
+    description: "charging ID chip/card 5 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 5
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_6
+    name: "ID Chip 6"
+    description: "charging ID chip/card 6 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 6
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_5
+    name: "ID Chip 7"
+    description: "charging ID chip/card 7 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 7
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_8
+    name: "ID Chip 8"
+    description: "charging ID chip/card 8 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 8
+    attribute_ids:
+      - name
+      - cardId
+  - source: namespacelist
+    id: cards_9
+    name: "ID Chip 9"
+    description: "charging ID chip/card 9 energy usage"
+    icon: "mdi:credit-card-chip"
+    enabled: False
+    value_id: energy
+    namespace_id: 9
+    attribute_ids:
+      - name
+      - cardId
 
 #  - source: attribute
 #    id: errorState
@@ -132,7 +244,7 @@ sensor:
     icon: "mdi:ev-station"
     device_class: energy
     unit_of_measurement: "Wh"
-    #entity_category: diagnostic
+    entity_category: diagnostic
     state_class: total
 
   - source: property

@@ -36,15 +36,19 @@ class ChargerPlatformEntity(Entity):
         """Initialize the object."""
         try:
             self._charger_id = str(entry.data.get(CONF_FRIENDLY_NAME, entry.data.get(CONF_IP_ADDRESS, DEFAULT_NAME)))
-            self._identifier = str(entity_cfg.get('id'))
+            self._identifier = str(entity_cfg.get('id')).split('_')[0]
             _LOGGER.debug("%s - %s: __init__", self._charger_id, self._identifier)
             self._charger = charger
             self._source = entity_cfg.get('source', 'property')
+            self._namespace_id = int(entity_cfg.get('namespace_id', 0))
             if self._source == 'attribute' and not hasattr(self._charger, self._identifier):
                 _LOGGER.error("%s - %s: __init__: Charger does not have an attribute: %s (maybe a property?)", self._charger_id, self._identifier, self._identifier)
                 return None
             elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
                 _LOGGER.error("%s - %s: __init__: Charger does not have a property: %s (maybe an attribute?)", self._charger_id, self._identifier, self._identifier)
+                return None
+            elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier)[int(self._namespace_id)] is None:
+                _LOGGER.error("%s - %s: __init__: Charger does not have a namespacelist item: %s[%s]", self._charger_id, self._identifier, self._identifier, self._namespace_id)
                 return None
             self._entity_cfg = entity_cfg
             self._entry = entry
@@ -63,7 +67,7 @@ class ChargerPlatformEntity(Entity):
            
             self._init_platform_specific()
 
-            self.uniqueid = self._charger_id + "-" + self._entity_cfg.get('uid', self._identifier)
+            self.uniqueid = self._charger_id + "-" + self._entity_cfg.get('uid', self._entity_cfg.get('id', self._identifier))
             #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
@@ -148,6 +152,9 @@ class ChargerPlatformEntity(Entity):
         elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
             _LOGGER.debug("%s - %s: available: false because unknown property", self._charger_id, self._identifier)            
             return False
+        elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier)[int(self._namespace_id)] is None:
+            _LOGGER.debug("%s - %s: available: false because unknown namespacelist item: %s", self._charger_id, self._identifier, self._namespace_id)            
+            return False
         else:
             return True
 
@@ -156,6 +163,8 @@ class ChargerPlatformEntity(Entity):
     def should_poll(self) -> bool:
         """Return True if polling is needed."""
         if self._source == 'attribute': 
+            return True
+        elif self._source == 'namespacelist':
             return True
         elif self._state == STATE_UNKNOWN:
             return True
@@ -261,6 +270,12 @@ class ChargerPlatformEntity(Entity):
             _LOGGER.debug("%s - %s: async_local_poll", self._charger_id, self._identifier)
             if self._source == 'attribute':
                 state = getattr(self._charger,self._identifier,STATE_UNKNOWN)
+            elif self._source == 'namespacelist':
+                state = await async_GetChargerProp(self._charger,self._identifier,STATE_UNKNOWN)
+                state = state[int(self._namespace_id)]
+                _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self.uniqueid, state)
+                state = await self._async_update_validate_property(state)
+                _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self.uniqueid, state)
             elif self._source == 'property':
                 state = await async_GetChargerProp(self._charger,self._identifier,STATE_UNKNOWN)
                 state = await self._async_update_validate_property(state)
@@ -282,6 +297,9 @@ class ChargerPlatformEntity(Entity):
             _LOGGER.debug("%s - %s: async_local_push", self._charger_id, self._identifier)
             if self._source == 'attribute':
                 pass
+            elif self._source == 'namespacelist':
+                state = state[int(self._namespace_id)]
+                state = await self._async_update_validate_property(state)
             elif self._source == 'property':
                 state = await self._async_update_validate_property(state)
             
