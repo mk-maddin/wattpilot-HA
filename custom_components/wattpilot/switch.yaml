@@ -83,3 +83,8 @@ switch:
     icon: "mdi:transmission-tower-off"
     entity_category: config
 
+  - id: wda
+    name: "Auto Disable Hotspot"
+    description: "Disable AccessPoint when cloud is connected for 30sec successfully"
+    icon: "mdi:wifi-cog"
+    entity_category: config

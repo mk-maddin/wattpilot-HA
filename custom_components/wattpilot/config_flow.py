@@ -14,7 +14,10 @@ from homeassistant.const import (
     CONF_IP_ADDRESS,
 )
 
-from .configuration_schema import CHARGER_SCHEMA
+from .configuration_schema import (
+    CHARGER_SCHEMA,
+    async_get_OPTIONS_CHARGER_SCHEMA,
+)
 from .const import (
     CONF_CHARGER,
     CONF_CHARGERS,
@@ -89,7 +92,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Manage the options for the custom component."""
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_init: %s", DOMAIN, user_input)
         try:
-            errors: Dict[str, str] = {}
+            if not hasattr(self, 'data'):
+                self.data = {}
             if self.config_entry.source == config_entries.SOURCE_USER:
                 return await self.async_step_config_charger()
             else:
@@ -102,8 +106,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_config_charger(self, user_input=None):
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_charger: %s", DOMAIN, user_input)
         try:
+            OPTIONS_CHARGER_SCHEMA=await async_get_OPTIONS_CHARGER_SCHEMA(self.config_entry.data)
             if not user_input:
-                return self.async_show_form(step_id="config_charger", data_schema=CHARGER_SCHEMA)
+                return self.async_show_form(step_id="config_charger", data_schema=OPTIONS_CHARGER_SCHEMA)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_charger - user_input: %s", DOMAIN, user_input)
             self.data.update(user_input)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_charger complete: %s", DOMAIN, user_input)
@@ -113,10 +118,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_abort(reason="exception")
         
     async def async_step_final(self):
-        _LOGGER.debug("%s - OptionsFlowHandler: async_step_final", DOMAIN)
-        #_LOGGER.debug("%s - OptionsFlowHandler: async_step_final self is %s", DOMAIN, self)
-        #await async_ProgrammingDebug(self)
-        #_LOGGER.debug("%s - OptionsFlowHandler: async_step_final self END --", DOMAIN)
-        return self.async_create_entry(title=DOMAIN + " integration", data=self.data)
+        try:        
+            _LOGGER.debug("%s - OptionsFlowHandler: async_step_final", DOMAIN)
+            title=self.data.get(CONF_FRIENDLY_NAME, self.data.get(CONF_IP_ADDRESS, DEFAULT_NAME))
+            return self.async_create_entry(title=title, data=self.data)
+        except Exception as e:
+            _LOGGER.error("%s - OptionsFlowHandler: async_step_final failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
+            return self.async_abort(reason="exception")        
 
         
