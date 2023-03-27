@@ -37,6 +37,7 @@ sensor:
     description: "charging ID chip/card 0 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -50,6 +51,7 @@ sensor:
     description: "charging ID chip/card 1 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -63,6 +65,7 @@ sensor:
     description: "charging ID chip/card 2 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -76,6 +79,7 @@ sensor:
     description: "charging ID chip/card 3 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -89,6 +93,7 @@ sensor:
     description: "charging ID chip/card 4 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -102,6 +107,7 @@ sensor:
     description: "charging ID chip/card 5 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -115,6 +121,7 @@ sensor:
     description: "charging ID chip/card 6 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -123,11 +130,12 @@ sensor:
       - name
       - cardId
   - source: namespacelist
-    id: cards_5
+    id: cards_7
     name: "ID Chip 7"
     description: "charging ID chip/card 7 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -141,6 +149,7 @@ sensor:
     description: "charging ID chip/card 8 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
@@ -154,6 +163,7 @@ sensor:
     description: "charging ID chip/card 9 energy usage"
     icon: "mdi:credit-card-chip"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     enabled: False
     value_id: energy
