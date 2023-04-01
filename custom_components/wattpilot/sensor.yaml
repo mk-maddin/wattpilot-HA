@@ -273,9 +273,9 @@ sensor:
     #icon: "mdi:meter-electric" #not available (yet)
     icon: "mdi:ev-station"
     device_class: energy
+    state_class: total
     unit_of_measurement: "Wh"
     #entity_category: diagnostic
-    state_class: total
 
   - source: property
     id: ffb
@@ -439,6 +439,7 @@ sensor:
     #icon: "mdi:meter-electric-outline" # not available (yet)
     icon: "mdi:ev-station"
     device_class: energy
+    state_class: total_increasing
     unit_of_measurement: "Wh"
 
   - source: property
