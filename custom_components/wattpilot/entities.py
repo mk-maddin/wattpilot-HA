@@ -191,9 +191,9 @@ class ChargerPlatformEntity(Entity):
         #_LOGGER.debug("%s - %s: device_info", self._charger_id, self._identifier)
         info = DeviceInfo(
             identifiers={(DOMAIN, getattr(self._charger,'serial', GetChargerProp(self._charger,'sse',None)))},
-            default_manufacturer=getattr(self._charger,'manufacturer',STATE_UNKNOWN),
-            default_model=GetChargerProp(self._charger,'typ',getattr(self._charger,'devicetype',STATE_UNKNOWN)),
-            default_name=getattr(self._charger,'name',getattr(self._charger,'hostname',STATE_UNKNOWN)),
+            manufacturer=getattr(self._charger,'manufacturer',STATE_UNKNOWN),
+            model=GetChargerProp(self._charger,'typ',getattr(self._charger,'devicetype',STATE_UNKNOWN)),
+            name=getattr(self._charger,'name',getattr(self._charger,'hostname',STATE_UNKNOWN)),
             sw_version=getattr(self._charger,'firmware',STATE_UNKNOWN),
             hw_version=str(GetChargerProp(self._charger,'var',STATE_UNKNOWN))+' KW',
             #configuration_url=getattr(self._charger,'url',STATE_UNKNOWN)
