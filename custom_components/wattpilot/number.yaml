@@ -75,10 +75,11 @@ number:
 
   - id: fst
     set_type: float
-    name: "Start Chargig at"
+    name: "Start Charging at"
     description: "PV Surplus start charging power"
     icon: "mdi:solar-power"
-    native_min_value: 1320
+    native_min_value: 0
+    native_max_value: 11000
     native_step: 1
     native_unit_of_measurement: "W"
     device_class: power
