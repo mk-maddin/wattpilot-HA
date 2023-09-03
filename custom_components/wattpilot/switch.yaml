@@ -50,6 +50,13 @@ switch:
     enabled: False
     entity_category: config
 
+  - id: loe
+    name: "Load Balancing"
+    description: "Load Balancing Enabled/Disabled"
+    icon: "mdi:scale-balance"
+    enabled: False
+    entity_category: config
+
   - id: lse
     name: "LED EnergySaving"
     description: "Switch off LEDs after 10secs in standby"

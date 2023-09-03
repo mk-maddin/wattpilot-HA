@@ -94,16 +94,6 @@ select:
     description: "Charging mode Default, Eco or Next Trip"
     icon: "mdi:leaf"
 
-  - id: lot
-    name: "Load Balancing"
-    options:
-      0: "Static"
-      1: "Dynamic"
-    description: "Load Balancing Type"
-    icon: "mdi:scale-balance"
-    enabled: False
-    entity_category: config
-
   - id: psm
     name: "Phase Switch"
     options:
