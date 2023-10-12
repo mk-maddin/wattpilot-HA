@@ -14,7 +14,8 @@ switch:
 #    entity_category: <optional: key within HA>
 #    invert: <optional: if set to true the switch state & value of the prop are inverted>
 #    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
-#    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
+#    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: fup
     name: "PV Surplus"

@@ -41,13 +41,14 @@ class ChargerPlatformEntity(Entity):
             self._charger = charger
             self._source = entity_cfg.get('source', 'property')
             self._namespace_id = int(entity_cfg.get('namespace_id', 0))
+            self._default_state = entity_cfg.get('default_state', None)
             if self._source == 'attribute' and not hasattr(self._charger, self._identifier):
                 _LOGGER.error("%s - %s: __init__: Charger does not have an attribute: %s (maybe a property?)", self._charger_id, self._identifier, self._identifier)
                 return None
-            elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
+            elif self._source == 'property' and GetChargerProp(self._charger, self._identifier, self._default_state) is None:
                 _LOGGER.error("%s - %s: __init__: Charger does not have a property: %s (maybe an attribute?)", self._charger_id, self._identifier, self._identifier)
                 return None
-            elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier)[int(self._namespace_id)] is None:
+            elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier, self._default_state)[int(self._namespace_id)] is None:
                 _LOGGER.error("%s - %s: __init__: Charger does not have a namespacelist item: %s[%s]", self._charger_id, self._identifier, self._identifier, self._namespace_id)
                 return None
             self._entity_cfg = entity_cfg
@@ -149,10 +150,10 @@ class ChargerPlatformEntity(Entity):
         elif self._source == 'attribute' and not hasattr(self._charger, self._identifier):
             _LOGGER.debug("%s - %s: available: false because unknown attribute", self._charger_id, self._identifier)
             return False
-        elif self._source == 'property' and GetChargerProp(self._charger, self._identifier) is None:
+        elif self._source == 'property' and GetChargerProp(self._charger, self._identifier, self._default_state) is None:
             _LOGGER.debug("%s - %s: available: false because unknown property", self._charger_id, self._identifier)            
             return False
-        elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier)[int(self._namespace_id)] is None:
+        elif self._source == 'namespacelist' and GetChargerProp(self._charger, self._identifier, self._default_state)[int(self._namespace_id)] is None:
             _LOGGER.debug("%s - %s: available: false because unknown namespacelist item: %s", self._charger_id, self._identifier, self._namespace_id)            
             return False
         else:
@@ -269,15 +270,15 @@ class ChargerPlatformEntity(Entity):
         try:
             _LOGGER.debug("%s - %s: async_local_poll", self._charger_id, self._identifier)
             if self._source == 'attribute':
-                state = getattr(self._charger,self._identifier,STATE_UNKNOWN)
+                state = getattr(self._charger,self._identifier,self._default_state)
             elif self._source == 'namespacelist':
-                state = await async_GetChargerProp(self._charger,self._identifier,STATE_UNKNOWN)
+                state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = state[int(self._namespace_id)]
                 _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self.uniqueid, state)
                 state = await self._async_update_validate_property(state)
                 _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self.uniqueid, state)
             elif self._source == 'property':
-                state = await async_GetChargerProp(self._charger,self._identifier,STATE_UNKNOWN)
+                state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = await self._async_update_validate_property(state)
            
             state = await self._async_update_validate_platform_state(state)

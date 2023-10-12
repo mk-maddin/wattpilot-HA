@@ -19,6 +19,7 @@ number:
 #    device_class: <optional: key within HA>
 #    unit_of_measurement: <optional: key within HA>
 #    entity_category: <optional: key within HA>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: amp
     set_type: int

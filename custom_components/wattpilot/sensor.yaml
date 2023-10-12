@@ -20,6 +20,7 @@ sensor:
 #    namespace_id: <required for namespacelist source objects: define which item from the list of namespaces should be used>
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
 #    enum: <optional dict to map states to enum values>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - source: attribute
     id: AccessState
@@ -415,6 +416,27 @@ sensor:
     device_class: temperature
     unit_of_measurement: "°C"
     entity_category: diagnostic
+
+  - source: property
+    id: trx
+    name: "ID Chip Current"
+    description: "Currently active transaction chip/card"
+    icon: "mdi:credit-card-wireless"
+    enabled: False
+    default_state: 999
+    enum:
+      0: "No Chip"
+      1: "ID Chip 0"
+      2: "ID Chip 1"
+      3: "ID Chip 2"
+      4: "ID Chip 3"
+      5: "ID Chip 4"
+      6: "ID Chip 5"
+      7: "ID Chip 6"
+      8: "ID Chip 7"
+      9: "ID Chip 8"
+      10: "ID Chip 9"
+      999: "No Transaction"
 
   - source: property
     id: wcch

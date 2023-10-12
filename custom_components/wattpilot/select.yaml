@@ -14,6 +14,7 @@ select:
 #    icon: <optional: key within HA>
 #    enabled: <optional: if set to False entity is by default disabled>
 #    entity_category: <optional: key within HA>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: acs
     name: "Access Control"
