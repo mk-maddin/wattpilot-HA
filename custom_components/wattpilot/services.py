@@ -47,7 +47,7 @@ async def async_registerService(hass: HomeAssistant, name:str , service) -> None
             #hass.services.async_register(DOMAIN, name, service)
             hass.services.async_register(DOMAIN, name, functools.partial(service, hass))
         else:
-            _LOGGER.warning("%s - async_registerServic: service already exists: %s", DOMAIN, name)  
+            _LOGGER.debug("%s - async_registerServic: service already exists: %s", DOMAIN, name)  
     except Exception as e:
         _LOGGER.error("%s - async_registerService: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)        
 
