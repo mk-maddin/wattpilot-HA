@@ -99,6 +99,9 @@ class ChargerSensor(ChargerPlatformEntity):
                 self._state_class = SensorStateClass.MEASUREMENT
             elif self._state_class == 'total': 
                 self._state_class = SensorStateClass.TOTAL
+            elif self._state_class == 'total_last_reset': 
+                self._state_class = SensorStateClass.TOTAL
+                self.last_reset=None
             elif self._state_class == 'total_increasing': 
                 self._state_class = SensorStateClass.TOTAL_INCREASING
             else:
