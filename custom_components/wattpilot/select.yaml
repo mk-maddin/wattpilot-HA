@@ -110,7 +110,8 @@ select:
     options:
       0: "None"
       1: "EuropeanSummerTime"
-      2: "UsDaylightTime"      
+      2: "UsDaylightTime"
+      3: "AUEasternDaylightTime"      
     description: "Timezone daylight saving mode"
     icon: "mdi:map-clock"
     entity_category: config
