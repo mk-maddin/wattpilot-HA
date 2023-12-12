@@ -61,7 +61,7 @@ If you are using older firmware, please read "Known Errors" instructions.
 ### Install with HACS
 
 Do you you have [HACS](https://community.home-assistant.io/t/custom-component-hacs) installed?
-You can manually add this repository to your HACS installation. [Here is the manual process][hacs-add-repo].
+You can manually add this repository to your HACS installation. [Here is the manual process](https://hacs.xyz/docs/faq/custom_repositories/).
 Then search for "Wattpilot" and install it directy from HACS.
 HACS will keep track of updates and you can easily upgrade to latest version. See Configuration for how to add it in HA.
 
