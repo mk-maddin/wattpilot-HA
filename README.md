@@ -58,6 +58,14 @@ If you are using older firmware, please read "Known Errors" instructions.
 
 ## Installation
 
+### Install with HACS
+
+Do you you have [HACS](https://community.home-assistant.io/t/custom-component-hacs) installed?
+You can manually add this repository to your HACS installation. [Here is the manual process][hacs-add-repo].
+Then search for "Wattpilot" and install it directy from HACS.
+HACS will keep track of updates and you can easily upgrade to latest version. See Configuration for how to add it in HA.
+
+### Install manually
 Download the repository and save the "wattpilot" folder into your home assistant custom_components directory.
 
 Once the files are downloaded, you’ll need to **restart HomeAssistant** and wait some minutes (probably clear your browser cache),
@@ -65,7 +73,7 @@ for the integration to appear within the integration store.
 
 ## Configuration
 
-### Optional:
+### Using MyHA:
 
 [MyHA - Add Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=wattpilot)
 
