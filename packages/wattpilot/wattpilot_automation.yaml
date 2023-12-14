@@ -61,3 +61,30 @@ automation:
               message: "Unhandled trigger: {{ trigger }}"
               logger: homeassistant.components.automation.wattpilot_sync_nexttrip
               level: error
+
+
+  - id: wattpilot_disconnect_reload
+    alias: wattpilot_disconnect_reload
+    description: 'Reload wattpilot device integration on disconnect'
+    mode: queued
+    max_exceeded: silent
+    trigger:
+      - id: 'system_log' 
+        platform: event
+        event_type: system_log_event
+        event_data:
+          level: ERROR
+          name: custom_components.wattpilot.utils
+          message:
+            - >-
+              46685168f8c86080645840dd194e2f06 - PropertyUpdateHandler: Could not 'self' execute async: '46685168f8c86080645840dd194e2f06' (builtins.KeyError) 
+              #PLEASE CHANGE: device_id of your charger / your reload error message
+    action:
+      - service: system_log.write
+        data_template:
+          message: "Reload wattpilot device after disconnect"
+          logger: homeassistant.components.automation.wattpilot_disconnect_reload
+          level: warning
+      - service: homeassistant.reload_config_entry
+        target:
+          device_id: 46685168f8c86080645840dd194e2f06 #PLEASE CHANGE: device_id of your charger

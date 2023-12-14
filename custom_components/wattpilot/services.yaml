@@ -51,7 +51,8 @@ set_debug_properties:
           integration: wattpilot
     debug_properties:
       name: Debug
-      description: Turn debugging ON or OFF
-      example: True
-      selector:
-        boolean:
+      description: TRUE to debug all properties; FALSE to debug none; list of properties to debug only these
+      example: 
+        - wda
+        - cci
+        - err

@@ -159,6 +159,8 @@ async def async_service_SetDebugProperties(hass: HomeAssistant, call: ServiceCal
 
         if dbg_state == True:
             entry_data[CONF_DBG_PROPS] = True
+        if isinstance(dbg_state, list):
+            entry_data[CONF_DBG_PROPS] = dbg_state
         else:
             entry_data[CONF_DBG_PROPS] = False
 
