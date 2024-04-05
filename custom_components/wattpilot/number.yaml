@@ -91,7 +91,7 @@ number:
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
     icon: "mdi:road-variant"
     native_min_value: 100.0
-    native_max_value: 50000.0
+    native_max_value: 500000.0
     native_step: 10.0
     device_class: energy
     native_unit_of_measurement: "Wh"
