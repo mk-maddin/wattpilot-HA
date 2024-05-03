@@ -23,8 +23,8 @@ number:
 
   - id: amp
     set_type: int
-    name: "Charging Power"
-    description: "Charging range per Hour"
+    name: "Max Charging Current"
+    description: "Maximum charging current allowed per phase"
     icon: "mdi:car-electric"
     native_min_value: 6.0
     #native_max_value: 16.0 # different for 11KW vs 22KW model

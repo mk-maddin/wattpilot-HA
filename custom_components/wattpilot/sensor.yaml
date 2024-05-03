@@ -350,8 +350,8 @@ sensor:
 
   - source: property
     id: nrg
-    name: "Charging Energy"
-    description: "Charging energy used for current car charging process"
+    name: "Charging Power"
+    description: "Charging power used for current car charging process"
     icon: "mdi:lightning-bolt-circle"
     device_class: power
     unit_of_measurement: W
