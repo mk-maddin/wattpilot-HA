@@ -342,7 +342,8 @@ sensor:
       20: "ChargingBecauseChargePauseNotAllowed"
       22: "NotChargingBecauseSimulateUnplugging"
       23: "NotChargingBecausePhaseSwitch"
-      24: "NotChargingBecauseMinPauseDuration"      
+      24: "NotChargingBecauseMinPauseDuration"
+      28: "NotChargingBecauseOCPPBackend"
     description: "Reason why we allow charging or not right now - values are listed at: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md -> modelStatus"
     icon: "mdi:ev-station"
     entity_category: diagnostic
