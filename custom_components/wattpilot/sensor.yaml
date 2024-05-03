@@ -437,6 +437,7 @@ sensor:
       8: "ID Chip 7"
       9: "ID Chip 8"
       10: "ID Chip 9"
+      998: "None"
       999: "No Transaction"
 
   - source: property

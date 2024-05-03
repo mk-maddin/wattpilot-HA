@@ -122,7 +122,7 @@ class ChargerSensor(ChargerPlatformEntity):
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         try:
-            if self._state_enum is None:
+            if self._state_enum is None or self._state_enum == 'None':
                 pass
             elif state in list(self._state_enum.keys()):
                 state = self._state_enum[state]
