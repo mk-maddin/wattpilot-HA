@@ -123,14 +123,16 @@ class ChargerSensor(ChargerPlatformEntity):
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         try:
-            if self._state_enum is None or self._state_enum == 'None':
+            if self._state_enum is None:
                 pass
+            elif state is None or state == 'None':
+                state = STATE_UNKNOWN
             elif state in list(self._state_enum.keys()):
                 state = self._state_enum[state]
             elif state in list(self._state_enum.values()):
                 pass
             else:
-                _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: state %s not within enum values: %s", self._charger_id, self._identifier, state, self._state_enum)
+                _LOGGER.warning("%s - %s: _async_update_validate_platform_state failed: state %s not within enum values: %s", self._charger_id, self._identifier, state, self._state_enum)
             return state
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

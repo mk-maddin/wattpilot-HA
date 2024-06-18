@@ -290,7 +290,7 @@ class ChargerPlatformEntity(Entity):
             _LOGGER.error("%s - %s: async_local_poll failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
 
-    async def async_local_push(self, state=None) -> None:
+    async def async_local_push(self, state=None, initwait=False) -> None:
         """Async: Get the latest status from the entity after an update was pushed"""
         try:
             if not self.enabled:
@@ -312,5 +312,10 @@ class ChargerPlatformEntity(Entity):
             else:
                 await self.hass.async_create_task(self.async_local_poll())
         except Exception as e:
-            _LOGGER.error("%s - %s: async_local_push failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+            if type(e).__name__ == 'NoEntitySpecifiedError' and initwait == False:
+                _LOGGER.debug("%s - %s: async_local_push: wait and retry once for setup init delay", self._charger_id, self._identifier)
+                await asyncio.sleep(5)
+                self.async_local_push(state,True)
+            else:
+                _LOGGER.error("%s - %s: async_local_push failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
