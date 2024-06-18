@@ -50,13 +50,16 @@ async def async_get_config_entry_diagnostics( hass: HomeAssistant, entry: Config
         diag["charger_properties"] = async_redact_data(charger.allProps, REDACT_ALLPROPS)
     except Exception as e:
         _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Adding charger properties to output failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
-        return False
+        return diag
 
     try:
-        _LOGGER.debug("%s - async_get_config_entry_diagnostics %s: Add python module [wattpilot] version", entry.entry_id, platform)
+        _LOGGER.debug("%s - async_get_config_entry_diagnostics %s: Add python modules version", entry.entry_id, platform)
         diag["wattpilot_module"] = version('wattpilot')
+        diag["pyyaml_module"] = version('pyyaml')
+        diag["importlib_metadata_module"] = version('importlib_metadata')
+        diag["aiofiles_module"] = version('aiofiles')
     except Exception as e:
-        _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Add python module [wattpilot] version failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
-        return False
+        _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Add python modules version failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        return diag
 
     return diag
