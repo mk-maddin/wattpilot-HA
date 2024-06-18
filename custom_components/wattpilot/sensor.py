@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Final
 import logging
 import asyncio
+import aiofiles
 import yaml
 import os
 
@@ -41,8 +42,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     entites=[]
     try:
         _LOGGER.debug("%s - async_setup_entry %s: Reading static yaml configuration", entry.entry_id, platform)
-        with open(os.path.dirname(os.path.realpath(__file__))+'/'+platform+'.yaml', 'r') as stream:
-            yaml_cfg=yaml.safe_load(stream)
+        async with aiofiles.open(os.path.dirname(os.path.realpath(__file__))+'/'+platform+'.yaml', 'r') as y: 
+            yaml_cfg=yaml.safe_load(await y.read())
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry %s: Reading static yaml configuration failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return False
