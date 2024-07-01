@@ -14,6 +14,7 @@ select:
 #    icon: <optional: key within HA>
 #    enabled: <optional: if set to False entity is by default disabled>
 #    entity_category: <optional: key within HA>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: acs
@@ -92,6 +93,7 @@ select:
       3: "Never locked"
     description: "Locks the button on the device so that changing the current level is not possible"
     icon: "mdi:account-cancel"
+    firmware: ">=38.5"
 
   - id: lmo
     options: lmoValues

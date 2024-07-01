@@ -58,6 +58,7 @@ async def async_get_config_entry_diagnostics( hass: HomeAssistant, entry: Config
         diag["pyyaml_module"] = version('pyyaml')
         diag["importlib_metadata_module"] = version('importlib_metadata')
         diag["aiofiles_module"] = version('aiofiles')
+        diag["packaging"] = version('packaging')
     except Exception as e:
         _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Add python modules version failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return diag

@@ -15,6 +15,7 @@ button:
 #    enabled: <optional: if set to False entity is by default disabled>
 #    device_class: <optional: key within HA>
 #    entity_category: <optional: key within HA>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: rst

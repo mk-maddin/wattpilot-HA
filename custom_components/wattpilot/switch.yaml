@@ -15,6 +15,7 @@ switch:
 #    invert: <optional: if set to true the switch state & value of the prop are inverted>
 #    value_id: <required for charger properties of type namespace: define which namespace attribute should be used as state value>
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: fup
@@ -25,11 +26,12 @@ switch:
 
 # IN FIRMWARE < 38.5 this was a switch (ON/OFF) value
 # IN FIRMWARE >= 38.5 this is a select (Always locked/Locked when car is connected/Never locked) value
-#  - id: bac
-#    name: "Lock level selection"
-#    description: "Locks the button on the device so that changing the current level is not possible"
-#    icon: "mdi:account-cancel"
-#    invert: True
+  - id: bac
+    name: "Lock level selection"
+    description: "Locks the button on the device so that changing the current level is not possible"
+    icon: "mdi:account-cancel"
+    invert: True
+    firmware: "<38.5"
 
   - id: fap
     name: "Charge Pause"

@@ -20,6 +20,7 @@ sensor:
 #    namespace_id: <required for namespacelist source objects: define which item from the list of namespaces should be used>
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
 #    enum: <optional dict to map states to enum values>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - source: attribute
@@ -390,6 +391,7 @@ sensor:
     icon: "mdi:web-sync"
     enabled: False
     entity_category: diagnostic
+    firmware: "<=40.7"
 
   - source: property
     id: rbc
@@ -455,6 +457,7 @@ sensor:
     icon: "mdi:web-box"
     enabled: False
     entity_category: diagnostic
+    firmware: "<=40.7"
 
   - source: property
     id: wccw
@@ -463,6 +466,7 @@ sensor:
     icon: "mdi:web-box"
     enabled: False
     entity_category: diagnostic
+    firmware: "<=40.7"
 
   - source: property
     id: wh

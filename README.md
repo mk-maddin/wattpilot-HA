@@ -36,8 +36,10 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 ## Known Errors:
 
-* the "Lock level selection" type has changed with firmware version 38.5 to SELECT where previously it was a SWITCH. By default this repository is configured for firmware >= 38.5. If you are running older version, please uncomment the area wihtin [switch.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/switch.yaml#L25) and comment the area wihtin [select.yaml](https://github.com/mk-maddin/wattpilot-HA/blob/0d8815a71546bba6ee0f8b7a08453ec346ebb69f/custom_components/wattpilot/select.yaml#L36).
-* config_flow Options workflow (if you press "configure" button within Integrations view) does not work. WORKAROUND: If you want to change options remove and re-add the entity.
+* after Wattpilot firmware update the device no longer establishes an active connection until next HA restart.
+  WORKAROUND: Restart home assistant once after Wattpilot firmware upgrade 
+* after Wattpilot has gone offline (due to power loss / Wattpilot GO / WiFi disconnect) the device no longer establishes an active connection until next HA restart.
+  WORKAROUND: Restart home assistant once after Wattpilot was offline
 
 # Screenshots
 
