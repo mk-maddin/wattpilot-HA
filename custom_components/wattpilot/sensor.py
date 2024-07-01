@@ -111,7 +111,7 @@ class ChargerSensor(ChargerPlatformEntity):
     @property
     def state_class(self) -> SensorStateClass | None:
         """Return the state_class of the entity."""
-        _LOGGER.debug("%s - %s: state_class: property requested", self._charger_id, self._identifier)
+        #_LOGGER.debug("%s - %s: state_class: property requested", self._charger_id, self._identifier)
         return self._state_class
 
     @property

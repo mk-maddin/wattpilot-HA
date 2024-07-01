@@ -55,10 +55,10 @@ def ProgrammingDebug(obj, show_all:bool=False) -> None:
         _LOGGER.error("%s - ProgrammingDebug: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
         pass
 
-async def async_PropertyDebug(identifier: str, value: str, include_properties: bool|list ) -> None:
+async def async_PropertyDebug(identifier: str, value: str, include_properties: bool|list) -> None:
     """Log properties if they change"""
     exclude_properties = ['efh','efh32','efh8','ehs','emhb','fbuf_age','fbuf_pAkku','fbuf_pGrid','fbuf_pPv','fhz','loc','lps','nrg','rbt','rcd','rfb','rssi','tma','tpcm','utc','fbuf_akkuSOC','lpsc','pvopt_averagePAkku','pvopt_averagePGrid','pvopt_averagePPv','pvopt_deltaP']
-    if (isinstance(include_properties, list) and identifier in include_properties) or isinstance(include_properties, bool) and not identifier in exclude_properties:
+    if (isinstance(include_properties, list) and identifier in include_properties) or (isinstance(include_properties, bool) and not identifier in exclude_properties):
         _LOGGER.warning("async_PropertyDebug: watch_properties: %s => %s ",identifier,value)
 
 def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:

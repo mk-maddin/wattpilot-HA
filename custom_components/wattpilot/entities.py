@@ -273,17 +273,17 @@ class ChargerPlatformEntity(Entity):
                     #_LOGGER.debug("%s - %s: _async_update_validate_property: adding attribute: %s", self._charger_id, self._identifier, attr_id)
                     self._attributes[attr_id]=getattr(namespace,attr_id,STATE_UNKNOWN)
             elif isinstance(state, list):
-                _LOGGER.debug("%s - %s: _async_update_validate_property: process list value", self._charger_id, self._identifier)
+                #_LOGGER.debug("%s - %s: _async_update_validate_property: process list value", self._charger_id, self._identifier)
                 state_list=state
                 if self._entity_cfg.get('value_id', None) is None:
-                    _LOGGER.debug("%s - %s: _async_update_validate_property: process list value by indexes", self._charger_id, self._identifier)
+                    #_LOGGER.debug("%s - %s: _async_update_validate_property: process list value by indexes", self._charger_id, self._identifier)
                     state=state_list[0]
                     i=1
                     for attr_state in state_list[1:]:
                         self._attributes['state'+str(i)]=attr_state
                         i=i+1
                 else:
-                    _LOGGER.debug("%s - %s: _async_update_validate_property: process list value by given attributes", self._charger_id, self._identifier)
+                    #_LOGGER.debug("%s - %s: _async_update_validate_property: process list value by given attributes", self._charger_id, self._identifier)
                     state=state_list[int(self._entity_cfg.get('value_id', 0))]
                     #_LOGGER.debug("%s - %s: _async_update_validate_property: new state: %s", self._charger_id, self._identifier, state)
                     for attr_entry in self._entity_cfg.get('attribute_ids', None):

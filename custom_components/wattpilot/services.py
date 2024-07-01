@@ -155,14 +155,20 @@ async def async_service_SetDebugProperties(hass: HomeAssistant, call: ServiceCal
         _LOGGER.debug("%s - async_service_SetDebugProperties: get entry_data for device_id: %s", DOMAIN, device_id)
         entry_data = await async_GetDataStoreFromDeviceID(hass, device_id)
         if entry_data is None:
+            _LOGGER.warning("%s - async_service_SetDebugProperties: unable to get entry_data for: %s", DOMAIN, CONF_DEVICE_ID)
             return None
 
-        if dbg_state == True:
+        if isinstance(dbg_state, bool):
+            entry_data[CONF_DBG_PROPS] = dbg_state
+        elif isinstance(dbg_state, str) and dbg_state.lower() == 'true':
             entry_data[CONF_DBG_PROPS] = True
-        if isinstance(dbg_state, list):
+        elif isinstance(dbg_state, str) and dbg_state.lower() == 'false':
+            entry_data[CONF_DBG_PROPS] = False
+        elif isinstance(dbg_state, list):
             entry_data[CONF_DBG_PROPS] = dbg_state
         else:
-            entry_data[CONF_DBG_PROPS] = False
+            _LOGGER.error("%s - async_service_SetDebugProperties: invalid debug state: %s (%s)", DOMAIN, dbg_state, type(dbg_state))
+            return None
 
     except Exception as e:
         _LOGGER.error("%s - async_service_SetDebugProperties: %s failed: %s (%s.%s)", DOMAIN, call, str(e), e.__class__.__module__, type(e).__name__)

@@ -19,6 +19,7 @@ from homeassistant.const import (
 
 from .const import (
     CONF_CHARGER,
+    CONF_DBG_PROPS,
     DOMAIN,
 )
 

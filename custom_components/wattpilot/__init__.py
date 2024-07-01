@@ -79,6 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data=hass.data[DOMAIN][entry.entry_id]
         entry_data[CONF_CHARGER]=charger
         entry_data[CONF_PARAMS]=entry.data
+        entry_data[CONF_DBG_PROPS]=False
         entry_data.setdefault(CONF_PUSH_ENTITIES, {})
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating data store failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
