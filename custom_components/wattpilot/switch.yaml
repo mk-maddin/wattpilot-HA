@@ -33,6 +33,13 @@ switch:
     invert: True
     firmware: "<38.5"
 
+  - id: ebe
+    name: "Boost"
+    description: "Boost charge from battery"
+    icon: "mdi:home-battery"
+    invert: False
+    firmware: ">=41.7"
+
   - id: fap
     name: "Charge Pause"
     description: "Deactivate 'Charge Pause' to prevent charging breaks during cost optimization"

@@ -43,6 +43,18 @@ number:
     native_step: 1
     entity_category: config
 
+  - id: ebt
+    set_type: int
+    name: "Boost discharges until"
+    description: "Set the percentage to which the PV battery is discharged in your vehicle during Boost."
+    icon: "mdi:power-plug-battery"
+    native_min_value: 0
+    native_max_value: 100
+    native_step: 1
+    native_unit_of_measurement: "%"
+    firmware: ">=41.7"
+    entity_category: config
+
   - id: fam
     set_type: int
     name: "PV Battery threshold"
