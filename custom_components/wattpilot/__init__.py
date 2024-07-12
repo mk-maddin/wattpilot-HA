@@ -93,9 +93,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     try:
+        _LOGGER.debug("%s - async_setup_entry: Trigger setup for platforms", entry.entry_id)
         await hass.config_entries.async_forward_entry_setups(entry, SUPPORTED_PLATFORMS)
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Setup trigger for platform %s failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry: Setup trigger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     try:
