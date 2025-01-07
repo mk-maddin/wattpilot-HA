@@ -356,7 +356,7 @@ class ChargerPlatformEntity(Entity):
             if type(e).__name__ == 'NoEntitySpecifiedError' and initwait == False:
                 _LOGGER.debug("%s - %s: async_local_push: wait and retry once for setup init delay", self._charger_id, self._identifier)
                 await asyncio.sleep(5)
-                self.async_local_push(state,True)
+                await self.async_local_push(state,True)
             else:
                 _LOGGER.error("%s - %s: async_local_push failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
