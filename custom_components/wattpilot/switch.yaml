@@ -18,12 +18,6 @@ switch:
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
-  - id: fup
-    name: "PV Surplus"
-    description: "Use photovoltaik surplus energy to charge your car."
-    icon: "mdi:solar-power"
-    entity_category: config
-
 # IN FIRMWARE < 38.5 this was a switch (ON/OFF) value
 # IN FIRMWARE >= 38.5 this is a select (Always locked/Locked when car is connected/Never locked) value
   - id: bac
@@ -58,6 +52,12 @@ switch:
     description: "Use Lumina Strom/aWattar for charging"
     icon: "mdi:chart-timeline-variant"
     enabled: False
+    entity_category: config
+
+  - id: fup
+    name: "PV Surplus"
+    description: "Use photovoltaik surplus energy to charge your car."
+    icon: "mdi:solar-power"
     entity_category: config
 
   - id: loe
