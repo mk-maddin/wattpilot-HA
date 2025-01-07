@@ -18,6 +18,12 @@ button:
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
+  - id: acs
+    set_value: 0
+    name: "Authenticate"
+    description: "Manually authenticate the charging process"
+    icon: "mdi:integrated-circuit-chip"
+
   - id: rst
     set_value: 1
     name: "Restart"
