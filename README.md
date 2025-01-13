@@ -1,4 +1,15 @@
-[Wattpilot Custom Component](https://github.com/mk-maddin/wattpilot-HA) for homeassistant
+[![GitHub Latest Release][releases_shield]][latest_release]
+[![Community Forum][community_forum_shield]][community_forum]
+[![PayPal.Me][paypal_me_shield]][paypal_me]
+
+[latest_release]: https://github.com/mk-maddin/wattpilot-HA/releases/latest
+[releases_shield]: https://img.shields.io/github/release/mk-maddin/wattpilot-HA.svg?style=popout
+
+[community_forum_shield]: https://img.shields.io/static/v1.svg?label=%20&message=Forum&style=popout&color=41bdf5&logo=HomeAssistant&logoColor=white
+[community_forum]: https://community.home-assistant.io/t/fronius-wattpilot/403118
+
+[paypal_me_shield]: https://img.shields.io/static/v1.svg?label=%20&message=PayPal.Me&logo=paypal
+[paypal_me]: https://paypal.me/KraemerMar
 
 # What This Is:
 
