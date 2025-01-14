@@ -65,7 +65,8 @@ def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, v
     """Watches on property updates and executes corresponding action"""
     try:
         #_LOGGER.debug("%s - PropertyUpdateHandler: 'self' execute async", entry_id)
-        asyncio.run_coroutine_threadsafe(async_PropertyUpdateHandler(hass, entry_id, identifier, value), hass.loop)
+        if entry_id in hass.data[DOMAIN]:
+            asyncio.run_coroutine_threadsafe(async_PropertyUpdateHandler(hass, entry_id, identifier, value), hass.loop)
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return default
