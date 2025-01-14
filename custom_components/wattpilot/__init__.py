@@ -61,6 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             timer+=1
         if not charger.connected:
             _LOGGER.error("%s - async_setup_entry: Timeout - charger not connected: %s (%s sec)", entry.entry_id, charger.connected, timeout)
+            _LOGGER.error("%s - async_setup_entry: Try to restart charger via Wattpilot app", entry.entry_id)
             return False
         elif not charger.allPropsInitialized: 
             _LOGGER.error("%s - async_setup_entry: Timeout - charger not initialized: %s (%s sec)", entry.entry_id, charger.allPropsInitialized, timeout)
@@ -113,7 +114,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_registerService(hass, "set_next_trip", async_service_SetNextTrip)        
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: register services failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return False 
+        return False
 
     _LOGGER.debug("%s - async_setup_entry: Completed", entry.entry_id)
     return True
@@ -140,7 +141,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if all_ok:
             _LOGGER.debug("%s - async_unload_entry: Unload option updates listener: %s.%s ", entry.entry_id, FUNC_OPTION_UPDATES)
             hass.data[DOMAIN][entry.entry_id][FUNC_OPTION_UPDATES]()
-        
+
+            try:
+                entry_data=hass.data[DOMAIN][entry.entry_id]
+                charger = entry_data[CONF_CHARGER]
+                _LOGGER.debug("%s - async_unload_entry: disconnect charger: %s", entry.entry_id, charger)
+                if hasattr(charger, 'disconnect') and callable(charger.disconnect):
+                    charger.disconnect()
+                else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
+                    charger._wsapp.close()
+                    charger._connected=False
+                charger=None
+                entry_data[CONF_CHARGER]=None                
+            except Exception as e:
+                _LOGGER.error("%s - async_unload_entry: could not disconnect charger: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+                _LOGGER.error("%s - async_unload_entry: session at charger %s (%s) stays open -> restart charger", entry.entry_id, charger.name, charger.serial)
+                pass
+
             _LOGGER.debug("%s - async_unload_entry: Remove data store: %s.%s ", entry.entry_id, DOMAIN, entry.entry_id)
             hass.data[DOMAIN].pop(entry.entry_id)
         return all_ok
