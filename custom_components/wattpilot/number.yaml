@@ -11,10 +11,10 @@ number:
 #    name: <optional: name of the switch within HA>
 #    description: <optional: key within HA>
 #    icon: <optional: key within HA>
-#    native_min_value: <optional: the minimum accepted value>
-#    native_max_value: <optional: the maximum accepted value>
-#    native_step: <optional: Defines the resolution of the values, i.e. the smallest increment or decrement>
-#    mode: <optional: Defines how the number should be displayed in the UI. 'auto', 'box' or 'slider'
+#    native_min_value: <optional: the minimum accepted value - default is 0>
+#    native_max_value: <optional: the maximum accepted value - default is 100>
+#    native_step: <optional: Defines the resolution of the values, i.e. the smallest increment or decrement - default is 0>
+#    mode: <optional: Defines how the number should be displayed in the UI. 'auto', 'box' or 'slider' >
 #    enabled: <optional: if set to False entity is by default disabled>
 #    device_class: <optional: key within HA>
 #    unit_of_measurement: <optional: key within HA>
@@ -32,16 +32,19 @@ number:
     native_step: 1.0
     mode: slider
     device_class: current
+    unit_of_measurement: "A"
 
   - id: awp
     set_type: float
     name: "Max Price"
-    description: "Lumina Strom/aWattar maximum price in cent"
+    description: "Lumina Strom/aWattar maximum price in euro cent"
     icon: "mdi:cash-100"
-    native_min_value: -9999
-    native_max_value: 99999
+    native_min_value: -99999
+    native_max_value: 999999
     native_step: 1
     entity_category: config
+    device_class: monetary
+    unit_of_measurement: "EUX"
 
   - id: ebt
     set_type: int
@@ -51,7 +54,8 @@ number:
     native_min_value: 0
     native_max_value: 100
     native_step: 1
-    native_unit_of_measurement: "%"
+    device_class: battery
+    unit_of_measurement: "%"
     firmware: ">=41.7"
     entity_category: config
 
@@ -63,7 +67,8 @@ number:
     native_min_value: 0
     native_max_value: 100
     native_step: 1
-    native_unit_of_measurement: "%"
+    device_class: battery
+    unit_of_measurement: "%"
     entity_category: config
 
   - id: fmt
@@ -71,9 +76,11 @@ number:
     name: "Min Charging Time"
     description: "Minimum charging time after the charging has started"
     icon: "mdi:car-clock"
-    native_min_value: 30000
-    native_step: 30000
-    native_unit_of_measurement: "ms"
+    device_class: duration
+    native_min_value: 60000
+    native_max_value: 3600000
+    native_step: 60000
+    unit_of_measurement: "ms"
     entity_category: config
 
   - id: fot
@@ -84,7 +91,8 @@ number:
     native_min_value: 0
     native_max_value: 100
     native_step: 1
-    native_unit_of_measurement: "°C"
+    device_class: temperature
+    unit_of_measurement: "°C"
     entity_category: config
 
   - id: fst
@@ -93,8 +101,9 @@ number:
     description: "PV Surplus start charging power"
     icon: "mdi:solar-power"
     native_min_value: 0
+    native_max_value: 999999
     native_step: 1
-    native_unit_of_measurement: "W"
+    unit_of_measurement: "W"
     device_class: power
     entity_category: config
 
@@ -103,9 +112,9 @@ number:
     name: "Next Trip Charging"
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
     icon: "mdi:road-variant"
-    native_min_value: 100.0
-    native_max_value: 500000.0
-    native_step: 10.0
+    native_min_value: 100
+    native_max_value: 999999
+    native_step: 10
     device_class: energy
-    native_unit_of_measurement: "Wh"
+    unit_of_measurement: "Wh"
 

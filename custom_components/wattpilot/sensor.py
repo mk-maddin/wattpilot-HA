@@ -10,9 +10,12 @@ import os
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.components.sensor import SensorStateClass
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.components.sensor import (
+    SensorStateClass,
+    SensorEntity,
+)
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
@@ -86,11 +89,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities(entites)
 
 
-class ChargerSensor(ChargerPlatformEntity):
+class ChargerSensor(ChargerPlatformEntity, SensorEntity):
     """Sensor class for Fronius Wattpilot integration."""
-
+    _state_attr='_attr_native_value'
+    
     def _init_platform_specific(self):
         """Platform specific init actions"""
+        self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
+        self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
         self._state_enum = self._entity_cfg.get('enum', None)
         self._state_class = self._entity_cfg.get('state_class', None)
         if not self._state_class is None:
@@ -107,6 +113,7 @@ class ChargerSensor(ChargerPlatformEntity):
                 self._state_class = None
         if not self._state_enum is None:
            self._state_enum = dict(self._state_enum)
+           
 
     @property
     def state_class(self) -> SensorStateClass | None:
@@ -133,8 +140,8 @@ class ChargerSensor(ChargerPlatformEntity):
                 pass
             else:
                 _LOGGER.warning("%s - %s: _async_update_validate_platform_state failed: state %s not within enum values: %s", self._charger_id, self._identifier, state, self._state_enum)
+            if not self._attr_native_unit_of_measurement is None: self._attr_native_value = state
             return state
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
-

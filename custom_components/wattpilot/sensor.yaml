@@ -41,6 +41,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 0
@@ -55,6 +56,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 1
@@ -69,6 +71,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 2
@@ -83,6 +86,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 3
@@ -97,6 +101,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 4
@@ -111,6 +116,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 5
@@ -125,6 +131,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 6
@@ -139,6 +146,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 7
@@ -153,6 +161,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 8
@@ -167,6 +176,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     enabled: False
     value_id: energy
     namespace_id: 9
@@ -277,6 +287,7 @@ sensor:
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
+    default_state: -1
     #entity_category: diagnostic
 
   - source: property
@@ -365,6 +376,7 @@ sensor:
     icon: "mdi:lightning-bolt-circle"
     device_class: power
     unit_of_measurement: W
+    default_state: -1
     value_id: 11
     attribute_ids:
       - L1_Voltage:0
@@ -407,6 +419,7 @@ sensor:
     description: "Counts the milliseconds since the last boot. Expires after 49 days, increasing the reboot_counter."
     icon: "mdi:av-time"
     enabled: False
+    device_class: duration
     unit_of_measurement: "ms"
     entity_category: diagnostic
 
@@ -426,6 +439,7 @@ sensor:
     description: "Temperature of the controller"
     icon: "mdi:thermometer"
     device_class: temperature
+    default_state: 999
     unit_of_measurement: "°C"
     entity_category: diagnostic
 
@@ -477,6 +491,7 @@ sensor:
     device_class: energy
     state_class: total_increasing
     unit_of_measurement: "Wh"
+    default_state: -1
 
   - source: property
     id: wst

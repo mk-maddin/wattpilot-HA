@@ -31,7 +31,7 @@ _LOGGER: Final = logging.getLogger(__name__)
 
 class ChargerPlatformEntity(Entity):
     """Base class for Fronius Wattpilot integration."""
-
+    _state_attr='state'
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
         """Initialize the object."""
@@ -63,20 +63,18 @@ class ChargerPlatformEntity(Entity):
             
             self._name = self._charger_id + ' ' + self._entity_cfg.get('name', self._entity_cfg.get('id'))
             self._icon = self._entity_cfg.get('icon', None)
-            self._device_class = self._entity_cfg.get('device_class', None)
-            self._unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
+            self._attr_device_class = self._entity_cfg.get('device_class', None)
             self._entity_category = self._entity_cfg.get('entity_category', None)
             self._set_type = self._entity_cfg.get('set_type', None)
 
             self._attributes = {}
-            self._attributes['description'] = self._entity_cfg.get('description', None)
-            self._state = STATE_UNKNOWN
+            self._attributes['description'] = self._entity_cfg.get('description', None)            
+            setattr(self, self._state_attr, self._entity_cfg.get('default_state', STATE_UNKNOWN))            
 
             self._init_platform_specific()
 
             self.uniqueid = self._charger_id + "-" + self._entity_cfg.get('uid', self._entity_cfg.get('id', self._identifier))
-            if self._init_failed == True:
-                return None
+            if self._init_failed == True: return None
             #_LOGGER.debug("%s - %s: __init__ complete (uid: %s)", self._charger_id, self._identifier, self.uniqueid)
         except Exception as e:            
             _LOGGER.error("%s - %s: __init__ failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
@@ -112,7 +110,9 @@ class ChargerPlatformEntity(Entity):
             return False
         _LOGGER.debug("%s - %s: _check_firmware_supported complete (%s%s -> %s)", self._charger_id, self._identifier, fw, fw_tst, v)
         return v
-            
+   
+
+   
     @property
     def name(self) -> str | None:
         """Return the name of the entity."""
@@ -132,30 +132,11 @@ class ChargerPlatformEntity(Entity):
 
 
     @property
-    def device_class(self) -> str | None:
-        """Return the device_class of the entity."""
-        return self._device_class
-
-
-    @property
-    def unit_of_measurement(self) -> str | None:
-        """Return the unit_of_measurement of the entity."""
-        return self._unit_of_measurement
-
-
-    @property
     def entity_category(self) -> EntityCategory | None:
         """Return the entity_category of the entity."""
         if not self._entity_category is None:
             return EntityCategory(self._entity_category)
         return None
-
-
-    @property
-    def state(self) -> str | None:
-        """Return the current state of the entity."""
-        return self._state
-
 
     @property
     def extra_state_attributes(self):
@@ -199,12 +180,12 @@ class ChargerPlatformEntity(Entity):
 
     @property
     def should_poll(self) -> bool:
-        """Return True if polling is needed."""
+        """Return True if polling is needed."""        
         if self._source == 'attribute': 
             return True
         elif self._source == 'namespacelist':
             return True
-        elif self._state == STATE_UNKNOWN:
+        elif getattr(self,self._state_attr,STATE_UNKNOWN) == self._entity_cfg.get('default_state', STATE_UNKNOWN):
             return True
         else:
             return False
@@ -322,7 +303,7 @@ class ChargerPlatformEntity(Entity):
            
             state = await self._async_update_validate_platform_state(state)
             if not state is None:
-                self._state = state
+                setattr(self, self._state_attr, state)
                 self.async_write_ha_state()
             #_LOGGER.debug("%s - %s: async_local_poll complete: %s", self._charger_id, self._identifier, state)
         except Exception as e:
@@ -347,11 +328,11 @@ class ChargerPlatformEntity(Entity):
             
             state = await self._async_update_validate_platform_state(state)
             if not state is None:
-                self._state = state
+                setattr(self, self._state_attr, state)
                 self.async_write_ha_state()
                 #_LOGGER.debug("%s - %s: async_local_push complete: %s", self._charger_id, self._identifier, state)
             else:
-                await self.hass.async_create_task(self.async_local_poll())
+                await self.hass.async_create_task(self.async_local_poll())                
         except Exception as e:
             if type(e).__name__ == 'NoEntitySpecifiedError' and initwait == False:
                 _LOGGER.debug("%s - %s: async_local_push: wait and retry once for setup init delay", self._charger_id, self._identifier)
