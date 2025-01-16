@@ -282,8 +282,7 @@ sensor:
     id: eto
     name: "Totally Charged"
     description: "Totally charged power"
-    #icon: "mdi:meter-electric" #not available (yet)
-    icon: "mdi:ev-station"
+    icon: "mdi:meter-electric"
     device_class: energy
     state_class: total
     unit_of_measurement: "Wh"
@@ -486,7 +485,6 @@ sensor:
     id: wh
     name: "Connection Charged"
     description: "Energy in Wh since car connected"
-    #icon: "mdi:meter-electric-outline" # not available (yet)
     icon: "mdi:ev-station"
     device_class: energy
     state_class: total_increasing
