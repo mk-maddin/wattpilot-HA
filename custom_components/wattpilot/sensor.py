@@ -74,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
             entity=ChargerSensor(hass, entry, entity_cfg, charger)
-            #entity=ChargerPlatformEntity(hass, entry, entity_cfg, charger)
+            if getattr(entity,'_init_failed', True): continue
             entites.append(entity)
             if entity._source == 'property':
                 push_entities[entity._identifier]=entity
@@ -120,6 +120,7 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
         """Return the state_class of the entity."""
         #_LOGGER.debug("%s - %s: state_class: property requested", self._charger_id, self._identifier)
         return self._state_class
+
 
     @property
     def capability_attributes(self):

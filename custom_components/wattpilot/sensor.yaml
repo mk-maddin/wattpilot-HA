@@ -21,6 +21,7 @@ sensor:
 #    attribute_ids: <optional for charger properties of type namespace: define which namespace attributes should be included into HA> 
 #    enum: <optional dict to map states to enum values>
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
+#    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - source: attribute

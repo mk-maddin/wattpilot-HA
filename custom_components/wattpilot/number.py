@@ -73,6 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
             entity=ChargerNumber(hass, entry, entity_cfg, charger)
+            if getattr(entity,'_init_failed', True): continue
             entites.append(entity)
             if entity._source == 'property':
                 push_entities[entity._identifier]=entity
@@ -94,30 +95,22 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     def _init_platform_specific(self):
         """Platform specific init actions"""
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
-        self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)        
-        _LOGGER.fatal("%s - %s: _init_platform_specific: entity_cfg is: %s", self._charger_id, self._identifier, self._entity_cfg)
-        n = self._entity_cfg.get('native_min_value', None)
-        if not n is None: 
-            self._attr_native_min_value=float(n)
-        n = self._entity_cfg.get('native_max_value', None)
-        if not n is None: 
-            self._attr_native_max_value=float(n)
-        elif self._identifier == 'amp':
-            variant=GetChargerProp(self._charger,'var',11)
-            #_LOGGER.debug("%s - %s: _init_platform_specific: %s: model variant is: %s", self._charger_id, self._identifier, self._name, variant)
-            if variant == 22 or variant == '22':
-                self._attr_native_max_value=float(32)
-            else:
-                self._attr_native_max_value=float(16)
-        n = self._entity_cfg.get('native_step', None)
-        if not n is None: 
-            self._attr_native_step=float(n)
+        self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)    
+        
+        n = self._entity_cfg.get('native_min_value', None)        
+        if not n is None: self._attr_native_min_value=float(n)
+        n = self._entity_cfg.get('native_max_value', None)        
+        if not n is None: self._attr_native_max_value=float(n)
+        n = self._entity_cfg.get('native_step', None)        
+        if not n is None: self._attr_native_step=float(n)
         self._attr_mode=self._entity_cfg.get('mode', None)
+
 
     def _get_platform_specific_state(self): 
         """Platform specific init actions"""
         #drop-in option for other platforms
         return self.state
+
 
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""

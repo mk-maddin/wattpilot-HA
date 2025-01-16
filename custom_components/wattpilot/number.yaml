@@ -20,6 +20,7 @@ number:
 #    unit_of_measurement: <optional: key within HA>
 #    entity_category: <optional: key within HA>
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
+#    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: amp
@@ -28,11 +29,25 @@ number:
     description: "Maximum charging current allowed per phase"
     icon: "mdi:car-electric"
     native_min_value: 6.0
-    #native_max_value: 16.0 # different for 11KW vs 22KW model
+    native_max_value: 16.0
     native_step: 1.0
     mode: slider
     device_class: current
     unit_of_measurement: "A"
+    variant: 11
+
+  - id: amp
+    set_type: int
+    name: "Max Charging Current"
+    description: "Maximum charging current allowed per phase"
+    icon: "mdi:car-electric"
+    native_min_value: 6.0
+    native_max_value: 32.0
+    native_step: 1.0
+    mode: slider
+    device_class: current
+    unit_of_measurement: "A"
+    variant: 22
 
   - id: awp
     set_type: float
@@ -112,7 +127,7 @@ number:
     name: "Next Trip Charging"
     description: "Defined amount of energy will be provided unitl the next scheduled ride"
     icon: "mdi:road-variant"
-    native_min_value: 100
+    native_min_value: 0
     native_max_value: 999999
     native_step: 10
     device_class: energy

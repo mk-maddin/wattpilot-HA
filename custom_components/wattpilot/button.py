@@ -73,6 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
                 _LOGGER.error("%s - async_setup_entry %s: Invalid yaml configuration - no source: %s", entry.entry_id, platform, entity_cfg)
                 continue
             entity=ChargerButton(hass, entry, entity_cfg, charger)
+            if entity is None: continue
             entites.append(entity)
             if entity._source == 'property':
                 push_entities[entity._identifier]=entity
