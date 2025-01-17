@@ -5,6 +5,7 @@ from typing import Final
 import logging
 import asyncio
 import json
+import types
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -150,12 +151,17 @@ async def async_SetChargerProp(charger, identifier:str=None, value:str=None, for
             force_type=str(force_type).lower()
 
         _LOGGER.debug("%s - async_SetChargerProp: Prepare new property value: %s=%s", DOMAIN, identifier, value)
-        if str(value).lower() in ["false","true"] or force_type == 'bool':
+        if force_type == 'str':
+            v=str(value)
+        elif str(value).lower() in ["false","true"] or force_type == 'bool':
             v=json.loads(str(value).lower())
         elif str(value).isnumeric() or force_type == 'int':
             v=int(value)
         elif str(value).isdecimal() or force_type == 'float':
             v=float(value)
+        elif type(value) is types.SimpleNamespace:
+            _LOGGER.warning("%s - async_SetChargerProp: Set for namespace detected - this is untest: %s=%s", DOMAIN, identifier, value)
+            v=value.__dict__
         else:
             v=str(value)
 
