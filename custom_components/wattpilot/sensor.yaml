@@ -430,6 +430,7 @@ sensor:
     icon: "mdi:wifi"
     enabled: False
     device_class: signal_strength
+    default_state: -120
     unit_of_measurement: "dB"
     entity_category: diagnostic
 
