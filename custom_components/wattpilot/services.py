@@ -67,7 +67,7 @@ async def async_service_SetNextTrip(hass: HomeAssistant, call: ServiceCall) -> N
         _LOGGER.debug("%s - async_service_SetNextTrip: get charger for device_id: %s", DOMAIN, device_id)
         charger = await async_GetChargerFromDeviceID(hass, device_id)
         if charger is None:
-            _LOGGER.error("%s - async_service_SetGoECloud: unable to get charger for: %s", DOMAIN, CONF_DEVICE_ID)
+            _LOGGER.error("%s - async_service_SetNextTrip: unable to get charger for: %s", DOMAIN, CONF_DEVICE_ID)
             return None
 
         _LOGGER.debug("%s - async_service_SetNextTrip: trigger time: %s", DOMAIN, trigger_time)
@@ -158,7 +158,7 @@ async def async_service_SetDebugProperties(hass: HomeAssistant, call: ServiceCal
         _LOGGER.debug("%s - async_service_SetDebugProperties: get entry_data for device_id: %s", DOMAIN, device_id)
         entry_data = await async_GetDataStoreFromDeviceID(hass, device_id)
         if entry_data is None:
-            _LOGGER.error("%s - async_service_SetGoECloud: unable to get entry data for: %s", DOMAIN, CONF_DEVICE_ID)
+            _LOGGER.error("%s - async_service_SetDebugProperties: unable to get entry data for: %s", DOMAIN, CONF_DEVICE_ID)
             return None
 
         if isinstance(dbg_state, bool):
@@ -175,4 +175,5 @@ async def async_service_SetDebugProperties(hass: HomeAssistant, call: ServiceCal
 
     except Exception as e:
         _LOGGER.error("%s - async_service_SetDebugProperties: %s failed: %s (%s.%s)", DOMAIN, call, str(e), e.__class__.__module__, type(e).__name__)
+
 
