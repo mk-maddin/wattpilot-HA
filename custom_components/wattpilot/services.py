@@ -13,10 +13,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.const import (
-        CONF_DEVICE_ID,
-        CONF_TRIGGER_TIME,
         CONF_API_KEY,
+        CONF_DEVICE_ID,
         CONF_EXTERNAL_URL,
+        CONF_PARAMS,
+        CONF_TRIGGER_TIME,
 )
 
 from .const import (
@@ -27,10 +28,10 @@ from .const import (
     DOMAIN,
 )
 from .utils import (
+    async_ConnectCharger,
     async_GetChargerProp,
     async_GetChargerFromDeviceID,
     async_GetDataStoreFromDeviceID,
-    async_ProgrammingDebug,
     async_SetChargerProp,
 )
 
@@ -177,3 +178,70 @@ async def async_service_SetDebugProperties(hass: HomeAssistant, call: ServiceCal
         _LOGGER.error("%s - async_service_SetDebugProperties: %s failed: %s (%s.%s)", DOMAIN, call, str(e), e.__class__.__module__, type(e).__name__)
 
 
+async def async_service_ReConnectCharger(hass: HomeAssistant, call: ServiceCall) -> Bool:
+    """Service to set the next trip timestamp"""
+    try:
+        device_id = call.data.get(CONF_DEVICE_ID, None)
+        if device_id is None:
+            _LOGGER.error("%s - async_service_ReConnectCharger: %s is a required parameter", DOMAIN, CONF_DEVICE_ID)
+            return None
+        _LOGGER.debug("%s - async_service_ReConnectCharger: service call data: %s", DOMAIN, call.data)
+
+        _LOGGER.debug("%s - async_service_ReConnectCharger: get entry_data for device_id: %s", DOMAIN, device_id)
+        entry_data = await async_GetDataStoreFromDeviceID(hass, device_id)
+        if entry_data is None:
+            _LOGGER.error("%s - async_service_ReConnectCharger: unable to get entry data for: %s", DOMAIN, CONF_DEVICE_ID)
+            return False
+
+        _LOGGER.debug("%s - async_service_ReConnectCharger: get charger for device_id: %s", DOMAIN, device_id)
+        charger = await async_GetChargerFromDeviceID(hass, device_id)
+        if charger is None:
+            _LOGGER.error("%s - async_service_ReConnectCharger: unable to get charger for: %s", DOMAIN, CONF_DEVICE_ID)
+            return False
+
+        if charger._connected == True:
+            _LOGGER.debug("%s - async_service_ReConnectCharger: first disconnect charger: %s", DOMAIN, device_id)
+            disconnect = await async_service_DisconnectCharger(hass, call)
+            if not disconnect == True:
+                return False
+            await asyncio.sleep(1)
+
+        _LOGGER.debug("%s - async_service_ReConnectCharger: Connecting charger", DOMAIN)
+        charger = await async_ConnectCharger(device_id, entry_data[CONF_PARAMS], charger)
+        if charger == False: return False
+        _LOGGER.info("%s - async_service_ReConnectCharger: Charger reconnected: %s", DOMAIN, charger.name)
+        return True
+
+    except Exception as e:
+        _LOGGER.error("%s - async_service_ReConnectCharger: %s failed: %s (%s.%s)", DOMAIN, call, str(e), e.__class__.__module__, type(e).__name__)
+        return False     
+
+ 
+async def async_service_DisconnectCharger(hass: HomeAssistant, call: ServiceCall) -> Bool:
+    """Service to set the next trip timestamp"""
+    try:
+        device_id = call.data.get(CONF_DEVICE_ID, None)
+        if device_id is None:
+            _LOGGER.error("%s - async_service_DisconnectCharger: %s is a required parameter", DOMAIN, CONF_DEVICE_ID)
+            return False
+        _LOGGER.debug("%s - async_service_DisconnectCharger: service call data: %s", DOMAIN, call.data)
+
+        _LOGGER.debug("%s - async_service_DisconnectCharger: get charger for device_id: %s", DOMAIN, device_id)
+        charger = await async_GetChargerFromDeviceID(hass, device_id)
+        if charger is None:
+            _LOGGER.error("%s - async_service_DisconnectCharger: unable to get charger for: %s", DOMAIN, CONF_DEVICE_ID)
+            return False
+
+        if hasattr(charger, 'disconnect') and callable(charger.disconnect):
+            charger.disconnect()
+        else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
+            charger._wsapp.close()
+            charger._connected=False
+        _LOGGER.info("%s - async_service_DisconnectCharger: Charger disconnected: %s", DOMAIN, charger.name)
+        return True
+
+    except Exception as e:
+        _LOGGER.error("%s - async_service_DisconnectCharger: %s failed: %s (%s.%s)", DOMAIN, call, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+ 
+ 

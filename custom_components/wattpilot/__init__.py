@@ -8,31 +8,27 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (
-    CONF_IP_ADDRESS,
     CONF_PARAMS,
-    CONF_PASSWORD,
-    CONF_TIMEOUT,
 )
-
-import wattpilot
 
 from .const import (
     CONF_CHARGER,
     CONF_DBG_PROPS,
     CONF_PUSH_ENTITIES,
-    DEFAULT_TIMEOUT,
     DOMAIN,
     FUNC_OPTION_UPDATES,
     SUPPORTED_PLATFORMS,
 )
 from .services import (
     async_registerService,
+    async_service_DisconnectCharger,
+    async_service_ReConnectCharger,
     async_service_SetDebugProperties,
     async_service_SetGoECloud,
     async_service_SetNextTrip,
 )
 from .utils import (
-    async_ProgrammingDebug,
+    async_ConnectCharger,
     async_SetChargerProp,
     PropertyUpdateHandler,
 )
@@ -43,34 +39,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a charger from the config entry."""
     _LOGGER.debug("Setting up config entry: %s", entry.entry_id)
 
-    try:
-        ip = entry.data.get(CONF_IP_ADDRESS, None)
-        _LOGGER.debug("%s - async_setup_entry: Connecting charger ip: %s", entry.entry_id, ip)     
-        charger=wattpilot.Wattpilot(ip, entry.data.get(CONF_PASSWORD, None))
-        charger.connect()
+    try: 
+        _LOGGER.debug("%s - async_setup_entry: Connecting charger", entry.entry_id)
+        charger = await async_ConnectCharger(entry.entry_id, entry.data)
+        if charger == False: return False 
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Connecting charger ip failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return False
-    
-    try:
-        _LOGGER.debug("%s - async_setup_entry: Ensure charger is connected and initialized: %s", entry.entry_id, ip)
-        timer=0
-        timeout=entry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
-        while timeout > timer and not (charger.connected and charger.allPropsInitialized):
-            await asyncio.sleep(1)
-            timer+=1
-        if not charger.connected:
-            _LOGGER.error("%s - async_setup_entry: Timeout - charger not connected: %s (%s sec)", entry.entry_id, charger.connected, timeout)
-            _LOGGER.error("%s - async_setup_entry: Try to restart charger via Wattpilot app", entry.entry_id)
-            return False
-        elif not charger.allPropsInitialized: 
-            _LOGGER.error("%s - async_setup_entry: Timeout - charger not initialized: %s (%s sec)", entry.entry_id, charger.allPropsInitialized, timeout)
-            return False
-        elif not timeout > timer:
-            _LOGGER.error("%s - async_setup_entry: Timeout - unknown reason: %s sec", entry.entry_id, timeout)
-            return False
-    except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Initialize charger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry: Connecting charger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     try:
@@ -109,6 +83,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         _LOGGER.debug("%s - async_setup_entry: register services", entry.entry_id)
+        await async_registerService(hass, "disconnect_charger", async_service_DisconnectCharger)
+        await async_registerService(hass, "reconnect_charger", async_service_ReConnectCharger)        
         await async_registerService(hass, "set_goe_cloud", async_service_SetGoECloud)
         await async_registerService(hass, "set_debug_properties", async_service_SetDebugProperties)
         await async_registerService(hass, "set_next_trip", async_service_SetNextTrip)        

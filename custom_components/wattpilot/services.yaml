@@ -56,3 +56,27 @@ set_debug_properties:
         - wda
         - cci
         - err
+
+disconnect_charger:
+  name: Disconnect Charger
+  dscription: Disconnect an established charger connection (entities will be unavailable)
+  fields:
+    device_id:
+      name: Charger
+      description: Charger device for which to apply change
+      example: 1625eec2e3f83829c2d52999ecdd2036
+      selector:
+        device:
+          integration: wattpilot
+
+reconnect_charger:
+  name: ReConnect Charger
+  dscription: (Re)connect an disconnected charger connection
+  fields:
+    device_id:
+      name: Charger
+      description: Charger device for which to apply change
+      example: 1625eec2e3f83829c2d52999ecdd2036
+      selector:
+        device:
+          integration: wattpilot

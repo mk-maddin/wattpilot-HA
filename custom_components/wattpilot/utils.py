@@ -15,13 +15,18 @@ from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,        
     CONF_PARAMS,
+    CONF_PASSWORD,
+    CONF_TIMEOUT,
 )
+
+import wattpilot
 
 from .const import (
     CONF_CHARGER,
     CONF_DBG_PROPS,
-    DEFAULT_NAME,    
     CONF_PUSH_ENTITIES,
+    DEFAULT_NAME,
+    DEFAULT_TIMEOUT,
     DOMAIN,
     EVENT_PROPS_ID,
     EVENT_PROPS,
@@ -43,6 +48,7 @@ async def async_ProgrammingDebug(obj, show_all:bool=False) -> None:
         _LOGGER.error("%s - async_ProgrammingDebug: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
         pass
 
+
 def ProgrammingDebug(obj, show_all:bool=False) -> None:
     """return all attributes of a specific objec"""
     try:
@@ -56,11 +62,13 @@ def ProgrammingDebug(obj, show_all:bool=False) -> None:
         _LOGGER.error("%s - ProgrammingDebug: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
         pass
 
+
 async def async_PropertyDebug(identifier: str, value: str, include_properties: bool|list) -> None:
     """Log properties if they change"""
     exclude_properties = ['efh','efh32','efh8','ehs','emhb','fbuf_age','fbuf_pAkku','fbuf_pGrid','fbuf_pPv','fhz','loc','lps','nrg','rbt','rcd','rfb','rssi','tma','tpcm','utc','fbuf_akkuSOC','lpsc','pvopt_averagePAkku','pvopt_averagePGrid','pvopt_averagePPv','pvopt_deltaP']
     if (isinstance(include_properties, list) and identifier in include_properties) or (isinstance(include_properties, bool) and not identifier in exclude_properties):
         _LOGGER.warning("async_PropertyDebug: watch_properties: %s => %s ",identifier,value)
+
 
 def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
     """Watches on property updates and executes corresponding action"""
@@ -71,6 +79,7 @@ def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, v
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return default
+
 
 async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
     """Asnyc: Watches on property updates and executes corresponding action"""
@@ -98,6 +107,7 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return default
 
+
 async def async_GetChargerProp(charger, identifier: str, default=None):
     """Async: return the value of a charger attribute"""
     try:
@@ -115,6 +125,7 @@ async def async_GetChargerProp(charger, identifier: str, default=None):
         _LOGGER.error("%s - async_GetChargerProp: Could not get property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
         return default
 
+
 def GetChargerProp(charger, identifier:str=None, default:str=None):
     """return the value of a charger attribute"""
     try:
@@ -130,6 +141,7 @@ def GetChargerProp(charger, identifier:str=None, default:str=None):
     except Exception as e:
         _LOGGER.error("%s - GetChargerProp: Could not get property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
         return default
+
 
 async def async_SetChargerProp(charger, identifier:str=None, value:str=None, force:bool=False, force_type:str=None) -> bool:
     """Async: set the value of a charger attribute"""
@@ -173,6 +185,7 @@ async def async_SetChargerProp(charger, identifier:str=None, value:str=None, for
         _LOGGER.error("%s - async_SetChargerProp: Could not set property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
+
 async def async_GetDataStoreFromDeviceID(hass: HomeAssistant, device_id: str):
     """Async: return the data store for a specific device_id"""
     try:
@@ -196,6 +209,7 @@ async def async_GetDataStoreFromDeviceID(hass: HomeAssistant, device_id: str):
     except Exception as e:
         _LOGGER.error("%s - async_GetDataStoreFromDeviceID: Could not get data store %s: %s (%s.%s)", DOMAIN, device_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
+
 
 async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
     """Async: return the charger object for a specific device_id"""
@@ -221,3 +235,43 @@ async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
     except Exception as e:
         _LOGGER.error("%s - async_GetChargerFromDeviceID: Could not get charger %s: %s (%s.%s)", DOMAIN, device_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
+
+
+async def async_ConnectCharger(entry_or_device_id, data, charger=None):
+    """Async: connect charger and handle connection errors"""
+    try:
+        if charger is None:
+            ip = data.get(CONF_IP_ADDRESS, None)
+            _LOGGER.debug("%s - async_ConnectCharger: Connecting charger from params ip: %s", entry_or_device_id, ip)     
+            charger=wattpilot.Wattpilot(ip, data.get(CONF_PASSWORD, None))
+        else:
+            _LOGGER.debug("%s - async_ConnectCharger: Reconnect existing charger: %s", entry_or_device_id, charger.name)
+            ip = charger.name
+        charger.connect()
+    except Exception as e:
+        _LOGGER.error("%s - async_ConnectCharger: Connecting charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+    
+    try:
+        _LOGGER.debug("%s - async_ConnectCharger: Ensure charger is connected and initialized: %s", entry_or_device_id, ip)
+        timer=0
+        timeout=data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+        while timeout > timer and not (charger.connected and charger.allPropsInitialized):
+            await asyncio.sleep(1)
+            timer+=1
+        if not charger.connected:
+            _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not connected: %s (%s sec)", entry_or_device_id, charger.connected, timeout)
+            _LOGGER.error("%s - async_ConnectCharger: Try to restart charger via Wattpilot app", entry_or_device_id)
+            return False
+        elif not charger.allPropsInitialized: 
+            _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not initialized: %s (%s sec)", entry_or_device_id, charger.allPropsInitialized, timeout)
+            return False
+        elif not timeout > timer:
+            _LOGGER.error("%s - async_ConnectCharger: Timeout - unknown reason: %s sec", entry_or_device_id, timeout)
+            return False
+    except Exception as e:
+        _LOGGER.error("%s - async_ConnectCharger: Initialize charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        return False
+
+    _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  
+    return charger
