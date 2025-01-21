@@ -432,7 +432,7 @@ sensor:
     icon: "mdi:wifi"
     enabled: False
     device_class: signal_strength
-    unit_of_measurement: "dB"
+    #unit_of_measurement: "dB" #fix to be done as dB does not support '_attr_suggested_unit_of_measurement
     entity_category: diagnostic
 
   - source: property
