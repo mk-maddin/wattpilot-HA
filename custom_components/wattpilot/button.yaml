@@ -48,3 +48,10 @@ button:
     name: "Restart"
     description: "Restart the charger"
     device_class: restart
+
+  - id: trx
+    set_value: 0
+    name: "Authenticate"
+    description: "Authenticate the charger without ID card"
+    icon: "mdi:credit-card-wireless-outline"
+    enabled: False
