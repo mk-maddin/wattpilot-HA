@@ -29,12 +29,14 @@ Not me neither any of contributors to this or any prerequired/dependency project
 
 # What It Does:
 
-Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energy/installers-partners/technical-data/all-products/solutions/fronius-wattpilot/fronius-wattpilot/wattpilot-home-11-j) wallbox/electro vehicle charging devices via home assistant with the following features:
+Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energy/installers-partners/products-solutions/residential-energy-solutions/e-mobility-and-photovoltaic-residential/wattpilot-ev-charging-solution-for-homes) wallbox/electro vehicle charging devices via home assistant with the following features:
 
+* connect charger via local LAN or via Cloud
 * charging mode change
 * start / stop charging
 * configuration for different charging behaviours
 * sensors for charging box status
+* manual disconnect/reconnect chargers (Helpful for Wattpilot GO version)
 * next trip timing configuration via service call (& event when next trip timing value is changed) -> you can create an [input_datetime (example)](packages/wattpilot/wattpilot_input_datetime.yaml) entity & corresponding [automation (example)](packages/wattpilot/wattpilot_automation.yaml) which ensures the input_datetime is in sync with the setting wihtin your wattpilot charger
 * log value changes for properties of the wallbox as warnings (enable/disable via service call)
 * can enable/disable e-go cloud charging API (enable/disable via service call) -> this is at your own responsibility - is not clear if fronius/you "pay" in some way for the e-go cloud API and thus are legally allowed to use -> as it is not required at the moment for the functionality of this component, I do not recommend to enable
@@ -43,14 +45,11 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 * create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 * create a light integration for LED color control etc.
-* OCPP values support
 
 ## Known Errors:
 
-* after Wattpilot firmware update the device no longer establishes an active connection until next HA restart.
-  WORKAROUND: Restart home assistant once after Wattpilot firmware upgrade 
-* after Wattpilot has gone offline (due to power loss / Wattpilot GO / WiFi disconnect) the device no longer establishes an active connection until next HA restart.
-  WORKAROUND: Restart home assistant once after Wattpilot was offline
+* No explicit known errors
+* See https://github.com/mk-maddin/wattpilot-HA/issues for issues.
 
 # Screenshots
 
@@ -59,6 +58,8 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 ![screenshot of Wattpilot Device](doc/device_view1.jpg)
 
 ![screenshot of Wattpilot Device](doc/device_view2.jpg)
+
+![screenshot of Wattpilot Device](doc/device_view3.jpg)
 
 ### Next Trip via timing via Service Call
 
@@ -98,6 +99,7 @@ for the integration to appear within the integration store.
 4. In the bottom right, click on the Add Integration button.
 5. From the list, search and select "Fronius Wattpilot".
 6. Follow the instruction on screen to complete the set up.
+   (If connecting local/LAN you will require the local IP - for cloud connection your wattpilot serial is required)
 
 ![screenshot of Config Flow](doc/config_flow1.jpg)
 
