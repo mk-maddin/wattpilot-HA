@@ -22,6 +22,7 @@ sensor:
 #    enum: <optional dict to map states to enum values>
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
+#    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - source: attribute
@@ -326,6 +327,7 @@ sensor:
     enabled: False
     device_class: timestamp
     entity_category: diagnostic
+    connection: local
 
   - source: property
     id: modelStatus

@@ -14,10 +14,14 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
+    CONF_PARAMS,
     STATE_UNKNOWN,
 )
 
 from .const import (
+    CONF_CONNECTION,
+    CONF_CLOUD,
+    CONF_LOCAL,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -45,12 +49,17 @@ class ChargerPlatformEntity(Entity):
             self._namespace_id = int(entity_cfg.get('namespace_id', 0))
             self._default_state = entity_cfg.get('default_state', None)
             self._entity_cfg = entity_cfg                        
-            
+ 
+            self._entry = entry
+            self.hass = hass 
+ 
             self._init_failed=True
             self._fw_supported = self._check_firmware_supported()
             if not self._fw_supported == True: return None
             self._variant_supported = self._check_variant_supported()
             if not self._variant_supported == True: return None
+            self._connection_supported = self._check_connection_supported()
+            if not self._connection_supported == True: return None
             
             self._init_failed=False
             if not self._fw_supported == False:
@@ -64,9 +73,6 @@ class ChargerPlatformEntity(Entity):
                     _LOGGER.error("%s - %s: __init__: Charger does not have a namespacelist item: %s[%s]", self._charger_id, self._identifier, self._identifier, self._namespace_id)
                     self._init_failed=True
             if self._init_failed == True: return None
-            
-            self._entry = entry
-            self.hass = hass            
             
             self._attr_name = self._charger_id + ' ' + self._entity_cfg.get('name', self._entity_cfg.get('id'))
             self._attr_icon = self._entity_cfg.get('icon', None)
@@ -98,8 +104,7 @@ class ChargerPlatformEntity(Entity):
     def _check_firmware_supported(self):
         """Return if the current charger firmware supports this entity"""
         fw_tst=self._entity_cfg.get('firmware', None)
-        if fw_tst is None:
-            return True
+        if fw_tst is None: return True
         fw = getattr(self._charger,'firmware',GetChargerProp(self._charger,'onv', None))
         if fw is None:
             _LOGGER.error("%s - %s: _check_firmware_supported: Cannot identify Charger firmware: %s", self._charger_id, self._identifier, fw)
@@ -119,17 +124,31 @@ class ChargerPlatformEntity(Entity):
             return False
         _LOGGER.debug("%s - %s: _check_firmware_supported complete (%s%s -> %s)", self._charger_id, self._identifier, fw, fw_tst, v)
         return v
- 
- 
+
+
     def _check_variant_supported(self):
         """Return if the current charger variant supports this entity"""
         v_tst=self._entity_cfg.get('variant', None)
-        if v_tst is None:
-            return True
+        if v_tst is None: return True
         variant=GetChargerProp(self._charger,'var',11)
         if str(variant).upper() == str(v_tst).upper(): v=True
         else: v=False
         _LOGGER.debug("%s - %s: _check_variant_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, variant, v_tst, v)
+        return v
+
+
+    def _check_connection_supported(self):
+        """Return if the current charger connection type supports this entity"""
+        c_tst=self._entity_cfg.get('connection', None)
+        if c_tst is None: return True        
+        entry_data = self.hass.data[DOMAIN].get(self._entry.entry_id, None)
+        if entry_data is None: return True
+        config_params = entry_data.get(CONF_PARAMS, None)
+        if config_params is None: return True
+        connection = config_params.get(CONF_CONNECTION, STATE_UNKNOWN)        
+        if str(connection).upper() == str(c_tst).upper(): v=True
+        else: v=False
+        _LOGGER.debug("%s - %s: _check_connection_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, connection, c_tst, v)
         return v
 
    
@@ -160,11 +179,14 @@ class ChargerPlatformEntity(Entity):
             _LOGGER.debug("%s - %s: available: false because enitity init not complete", self._charger_id, self._identifier)            
             return False
         elif self._fw_supported == False:
-            _LOGGER.debug("%s - %s: available: false because entity not supported by charger firmware", self._charger_id, self._identifier)            
+            _LOGGER.debug("%s - %s: available: false because entity not supported by charger firmware version", self._charger_id, self._identifier)            
             return False
         elif self._variant_supported == False:
             _LOGGER.debug("%s - %s: available: false because entity not supported by charger variant (11kW/22kW)", self._charger_id, self._identifier)            
             return False
+        elif self._connection_supported == False:
+            _LOGGER.debug("%s - %s: available: false because entity not supported by charger connection type (local/cloud)", self._charger_id, self._identifier)            
+            return False            
         elif not getattr(self._charger,'connected', True):
             _LOGGER.debug("%s - %s: available: false because charger disconnected", self._charger_id, self._identifier)
             return False

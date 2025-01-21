@@ -23,8 +23,12 @@ import wattpilot
 
 from .const import (
     CONF_CHARGER,
+    CONF_CONNECTION,
+    CONF_CLOUD,
     CONF_DBG_PROPS,
+    CONF_LOCAL,
     CONF_PUSH_ENTITIES,
+    CONF_SERIAL,
     DEFAULT_NAME,
     DEFAULT_TIMEOUT,
     DOMAIN,
@@ -240,20 +244,25 @@ async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
 async def async_ConnectCharger(entry_or_device_id, data, charger=None):
     """Async: connect charger and handle connection errors"""
     try:
-        if charger is None:
-            ip = data.get(CONF_IP_ADDRESS, None)
-            _LOGGER.debug("%s - async_ConnectCharger: Connecting charger from params ip: %s", entry_or_device_id, ip)     
-            charger=wattpilot.Wattpilot(ip, data.get(CONF_PASSWORD, None))
+        con = data.get(CONF_CONNECTION,CONF_LOCAL)
+        if charger is None and con == CONF_LOCAL:            
+            id = data.get(CONF_IP_ADDRESS, None)
+            _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by ip: %s", entry_or_device_id, CONF_LOCAL, id)     
+            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=False)
+        elif charger is None and con == CONF_CLOUD:            
+            id = data.get(CONF_SERIAL, None)
+            _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by serial: %s", entry_or_device_id, CONF_CLOUD, id)     
+            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True)
         else:
             _LOGGER.debug("%s - async_ConnectCharger: Reconnect existing charger: %s", entry_or_device_id, charger.name)
-            ip = charger.name
+            id = charger.name
         charger.connect()
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Connecting charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
     
     try:
-        _LOGGER.debug("%s - async_ConnectCharger: Ensure charger is connected and initialized: %s", entry_or_device_id, ip)
+        _LOGGER.debug("%s - async_ConnectCharger: Ensure charger is connected and initialized: %s", entry_or_device_id, id)
         timer=0
         timeout=data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
         while timeout > timer and not (charger.connected and charger.allPropsInitialized):
@@ -275,3 +284,4 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
 
     _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  
     return charger
+
