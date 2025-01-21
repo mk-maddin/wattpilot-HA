@@ -21,6 +21,7 @@ from .configuration_schema import (
     CONNECTION_SCHEMA,
     LOCAL_SCHEMA,
     async_get_OPTIONS_LOCAL_SCHEMA,
+    async_get_OPTIONS_CLOUD_SCHEMA,
 )
 from .const import (
     CONF_CONNECTION,
@@ -137,7 +138,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if not hasattr(self, 'data'):
                 self.data = {}
             if self.config_entry.source == config_entries.SOURCE_USER:
-                return await self.async_step_config_charger()
+                return await self.async_step_config_connection()
             else:
                 _LOGGER.warning("%s - OptionsFlowHandler: async_step_init: source not supported: %s", DOMAIN, self.config_entry.source)
                 return self.async_abort(reason="not_supported")
@@ -180,7 +181,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_config_cloud(self, user_input=None):
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_cloud: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
         try:
-            OPTIONS_LOCAL_SCHEMA=await async_get_OPTIONS_LOCAL_SCHEMA(self.config_entry.data)
+            OPTIONS_CLOUD_SCHEMA=await async_get_OPTIONS_CLOUD_SCHEMA(self.config_entry.data)
             if not user_input:
                 return self.async_show_form(step_id="config_cloud", data_schema=OPTIONS_CLOUD_SCHEMA)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_cloud - user_input: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))

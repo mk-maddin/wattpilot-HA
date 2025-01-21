@@ -284,3 +284,4 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
 
     _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  
     return charger
+
