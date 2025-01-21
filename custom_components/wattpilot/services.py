@@ -13,11 +13,11 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.const import (
-    CONF_API_KEY,
-    CONF_DEVICE_ID,
-    CONF_EXTERNAL_URL,
-    CONF_PARAMS,
-    CONF_TRIGGER_TIME,
+        CONF_API_KEY,
+        CONF_DEVICE_ID,
+        CONF_EXTERNAL_URL,
+        CONF_PARAMS,
+        CONF_TRIGGER_TIME,
 )
 
 from .const import (

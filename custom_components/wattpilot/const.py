@@ -12,11 +12,7 @@ CONF_DBG_PROPS: Final = 'debug_properties'
 CONF_CHARGERS: Final = 'chargers'
 CONF_CHARGER: Final = 'charger'
 CONF_CLOUD_API: Final = 'cloud_api'
-CONF_CLOUD: Final = 'cloud'
-CONF_CONNECTION: Final = 'connection'
-CONF_LOCAL: Final = 'local'
 CONF_PUSH_ENTITIES: Final = 'push_entities'
-CONF_SERIAL: Final = 'serial'
 
 DEFAULT_TIMEOUT: Final = 15
 
