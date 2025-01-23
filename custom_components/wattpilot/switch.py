@@ -129,7 +129,7 @@ class ChargerSwitch(ChargerPlatformEntity):
     async def async_turn_on(self, **kwargs) -> None:
         """Async: Turn entity on"""
         try:
-            _LOGGER.debug("%s - %s: async_turn_on: %s", self._charger_id, self._identifier, self._name)
+            _LOGGER.debug("%s - %s: async_turn_on: %s", self._charger_id, self._identifier, self._attr_name)
             if self._entity_cfg.get('invert', False):
                 value = False
             else:
@@ -142,7 +142,7 @@ class ChargerSwitch(ChargerPlatformEntity):
     async def async_turn_off(self, **kwargs) -> None:
         """Async: Turn entity off"""
         try:
-            _LOGGER.debug("%s - %s: async_turn_off: %s", self._charger_id, self._identifier, self._name)
+            _LOGGER.debug("%s - %s: async_turn_off: %s", self._charger_id, self._identifier, self._attr_name)
             if self._entity_cfg.get('invert', False):
                 value = True
             else:
