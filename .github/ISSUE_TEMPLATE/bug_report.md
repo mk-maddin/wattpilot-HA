@@ -1,7 +1,7 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
+name: Wattpilot bug report
+about: Use this template to get help
+title: 'IF NOT USING THE FORM BELOW YOUR ISSUE WILL BE CLOSED'
 labels: ''
 assignees: ''
 
