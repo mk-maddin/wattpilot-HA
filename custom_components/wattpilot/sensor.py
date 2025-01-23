@@ -100,44 +100,18 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
         if (not (unit_converter := UNIT_CONVERTERS.get(self._attr_device_class)) is None and self._attr_native_unit_of_measurement in unit_converter.VALID_UNITS):
             self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
-        self._state_enum = self._entity_cfg.get('enum', None)
-        self._state_class = self._entity_cfg.get('state_class', None)
-        if not self._state_class is None:
-            self._state_class = self._state_class.lower()
-            _LOGGER.debug("%s - %s: _init_platform_specific: specified state_class is: %s", self._charger_id, self._identifier, self._state_class)
-            if self._state_class == 'measurement':
-                self._state_class = SensorStateClass.MEASUREMENT
-            elif self._state_class == 'total': 
-                self._state_class = SensorStateClass.TOTAL
-            elif self._state_class == 'total_increasing': 
-                self._state_class = SensorStateClass.TOTAL_INCREASING
-            else:
-                _LOGGER.warning("%s - %s: _init_platform_specific: invalid state_class defined: %s", self._charger_id, self._identifier, self._state_class)
-                self._state_class = None
-        if not self._state_enum is None:
-           self._state_enum = dict(self._state_enum)
+        if not self._entity_cfg.get('state_class', None) is None:
+            self._attr_state_class= SensorStateClass((self._entity_cfg.get('state_class')).lower())
+        if not self._entity_cfg.get('enum', None) is None:
+           self._state_enum = dict(self._entity_cfg.get('enum', None))
            
-
-    @property
-    def state_class(self) -> SensorStateClass | None:
-        """Return the state_class of the entity."""
-        #_LOGGER.debug("%s - %s: state_class: property requested", self._charger_id, self._identifier)
-        return self._state_class
-
-
-    @property
-    def capability_attributes(self):
-        if not self.state_class is None:
-            return {"state_class": self.state_class}
-
-
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         try:
-            if self._state_enum is None:
-                pass
-            elif state is None or state == 'None':
+            if state is None or state == 'None':
                 state = STATE_UNKNOWN
+            elif not hasattr(self,'_state_enum'):
+                pass
             elif state in list(self._state_enum.keys()):
                 state = self._state_enum[state]
             elif state in list(self._state_enum.values()):
@@ -149,3 +123,4 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
+
