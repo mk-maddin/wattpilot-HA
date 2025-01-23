@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: HomeAssistant Community Support
+    url: https://community.home-assistant.io/t/fronius-wattpilot/403118
+    about: Please ask and answer not code related questions here.

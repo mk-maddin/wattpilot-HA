@@ -67,9 +67,6 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 # Installation and Configuration
 
-ATTENTION: Default configuration is for wattpilot firmware version > 38.5 !!
-If you are using older firmware, please read "Known Errors" instructions.
-
 ## Installation
 
 ### Install with HACS
