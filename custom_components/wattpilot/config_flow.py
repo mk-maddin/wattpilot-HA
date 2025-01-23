@@ -128,7 +128,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         _LOGGER.debug("%s - OptionsFlowHandler: __init__: %s", DOMAIN, config_entry)
-        self.config_entry = config_entry      
+        self._config_entry = config_entry      
 
                 
     async def async_step_init(self, user_input: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -137,10 +137,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         try:
             if not hasattr(self, 'data'):
                 self.data = {}
-            if self.config_entry.source == config_entries.SOURCE_USER:
+            if self._config_entry.source == config_entries.SOURCE_USER:
                 return await self.async_step_config_connection()
             else:
-                _LOGGER.warning("%s - OptionsFlowHandler: async_step_init: source not supported: %s", DOMAIN, self.config_entry.source)
+                _LOGGER.warning("%s - OptionsFlowHandler: async_step_init: source not supported: %s", DOMAIN, self._config_entry.source)
                 return self.async_abort(reason="not_supported")
         except Exception as e:
             _LOGGER.error("%s - OptionsFlowHandler: async_step_init failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
@@ -165,7 +165,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_config_local(self, user_input=None):
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
         try:
-            OPTIONS_LOCAL_SCHEMA=await async_get_OPTIONS_LOCAL_SCHEMA(self.config_entry.data)
+            OPTIONS_LOCAL_SCHEMA=await async_get_OPTIONS_LOCAL_SCHEMA(self._config_entry.data)
             if not user_input:
                 return self.async_show_form(step_id="config_local", data_schema=OPTIONS_LOCAL_SCHEMA)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local - user_input", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
@@ -181,7 +181,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_config_cloud(self, user_input=None):
         _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_cloud: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
         try:
-            OPTIONS_CLOUD_SCHEMA=await async_get_OPTIONS_CLOUD_SCHEMA(self.config_entry.data)
+            OPTIONS_CLOUD_SCHEMA=await async_get_OPTIONS_CLOUD_SCHEMA(self._config_entry.data)
             if not user_input:
                 return self.async_show_form(step_id="config_cloud", data_schema=OPTIONS_CLOUD_SCHEMA)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_cloud - user_input: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
