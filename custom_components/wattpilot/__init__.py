@@ -7,9 +7,8 @@ import asyncio
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.const import (
-    CONF_PARAMS,
-)
+from homeassistant.const import CONF_PARAMS
+
 
 from .const import (
     CONF_CHARGER,
@@ -29,7 +28,6 @@ from .services import (
 )
 from .utils import (
     async_ConnectCharger,
-    async_SetChargerProp,
     PropertyUpdateHandler,
 )
 

@@ -6,7 +6,6 @@ import logging
 import asyncio
 import voluptuous as vol
 
-from homeassistant import config_entries
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,

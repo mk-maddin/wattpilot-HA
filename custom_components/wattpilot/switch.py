@@ -10,11 +10,7 @@ import os
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.const import (
-    CONF_FRIENDLY_NAME,
-    CONF_IP_ADDRESS,
     STATE_ON,
     STATE_OFF,
     STATE_UNKNOWN,
@@ -25,15 +21,9 @@ from .entities import ChargerPlatformEntity
 from .const import (
     CONF_CHARGER,
     CONF_PUSH_ENTITIES,
-    DEFAULT_NAME,
     DOMAIN,
 )
-from .utils import (
-    async_ProgrammingDebug,
-    async_GetChargerProp,
-    GetChargerProp,
-    async_SetChargerProp,
-)
+from .utils import async_SetChargerProp
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='switch'

@@ -10,7 +10,6 @@ import time
 import datetime
 
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.const import (
     CONF_API_KEY,

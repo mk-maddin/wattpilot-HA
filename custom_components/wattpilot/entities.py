@@ -20,8 +20,6 @@ from homeassistant.const import (
 
 from .const import (
     CONF_CONNECTION,
-    CONF_CLOUD,
-    CONF_LOCAL,
     DEFAULT_NAME,
     DOMAIN,
 )

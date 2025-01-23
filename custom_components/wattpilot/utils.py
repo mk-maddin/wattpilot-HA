@@ -8,9 +8,7 @@ import json
 import types
 
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,        
