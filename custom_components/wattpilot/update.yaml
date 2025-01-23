@@ -1,0 +1,27 @@
+# version: 2021.12.19
+# author: Martin Kraemer, mk.maddin@gmail.com
+# description: YAML configuration file - holding predefined entities
+#   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
+
+update:
+
+#  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
+#    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
+#    name: <optional: name of the entity within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    device_class: <optional: key within HA>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
+#    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
+#    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
+
+  - id: ocu
+    set_type: string
+    name: "Firmware Update"
+    description: "Install firmware update available"
+    icon: "mdi:update"
+    device_class: firmware
+
