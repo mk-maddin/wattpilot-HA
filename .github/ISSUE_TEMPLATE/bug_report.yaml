@@ -1,0 +1,107 @@
+name: Wattpilot bug report
+description: Use this template to get help
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+      - label: I have searched the existing and already closed issues
+        required: true
+  - type: markdown
+    attributes:
+      value: |
+          ## Basics
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: The problem
+      description: >-
+        Describe the issue you are experiencing here, to communicate to the
+        maintainers. Tell us what you were trying to do and what happened.
+
+        Provide a clear and concise description of what the problem is.
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Describe the issue you are experiencing
+      description: A clear and concise description of what the issue is.
+  - type: textarea
+    attributes:
+      label: Describe the expected behavior
+      description: A clear and concise description of what you expected to happen
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+  - type: markdown
+    attributes:
+      value: |
+          ## Environment
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: What version of Home Assistant Core is installed?
+      description: > 
+          Can be found in: [Settings ⇒ System ⇒ Repairs ⇒ Three Dots in Upper Right ⇒ System information](https://my.home-assistant.io/redirect/system_health/).
+          [![Open your Home Assistant instance and show the system information.](https://my.home-assistant.io/badges/system_health.svg)](https://my.home-assistant.io/redirect/system_health/)
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: What version of Wattpilot integration is installed?
+      description: >
+        Can be found in: [Settings ⇒ Devices & services ⇒ Fronius Wattpilot ⇒ upper left; directly below the fronius logo](https://my.home-assistant.io/redirect/integration/?domain=wattpilot).
+        [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=wattpilot)
+  - type: dropdown
+    validations:
+      required: true
+    attributes:
+      label: What type of Wattpilot Charger are you using?
+      description: >
+        Can be found in: [Settings ⇒ Devices & services ⇒ Fronius Wattpilot ⇒ Select your charger device => upper left; Hardware](https://my.home-assistant.io/redirect/integration/?domain=wattpilot).
+        [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=wattpilot)
+      options:
+        - 11KW
+        - 22KW
+        - 11KW-V2
+        - 22KW-V2
+  - type: markdown
+    attributes:
+      value: |
+          ## Details
+  - type: textarea
+    attributes:
+      label: Error message shown within HA log
+      description: >
+        Can be found in: [Settings ⇒ System ⇒ Logs](https://my.home-assistant.io/redirect/logs/?).
+        [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/?)
+      placeholder: 22-03-10 09:47:47 ERROR (MainThread) [custom_components.wattpilot] MyErrorMessage
+  - type: textarea
+    attributes:
+      label: Diagnostics information
+      placeholder: "drag-and-drop the diagnostics data file here (do not copy-and-paste the content)"
+      description: >-
+        Wattpilot integration provides the ability to [download diagnostic data](https://www.home-assistant.io/docs/configuration/troubleshooting/#debug-logs-and-diagnostics).
+  
+        **It would really help if you could download the diagnostics data for the device you are having issues with,
+        and <ins>drag-and-drop that file into the textbox below.</ins>**
+  
+        It generally allows pinpointing defects and thus resolving issues faster.
+  - type: textarea
+    attributes:
+      label: Anything else?
+      description: |
+        Screenshots? Links? References? Anything that will give us more context about the issue you are encountering!
+  
+        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
