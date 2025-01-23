@@ -12,7 +12,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.components.number import NumberEntity
+from homeassistant.components.number import (
+    NumberEntity,
+    UNIT_CONVERTERS,
+)
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
@@ -95,7 +98,8 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     def _init_platform_specific(self):
         """Platform specific init actions"""
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
-        self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)    
+        if (not (unit_converter := UNIT_CONVERTERS.get(self._attr_device_class)) is None and self._attr_native_unit_of_measurement in unit_converter.VALID_UNITS):
+            self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)   
         
         n = self._entity_cfg.get('native_min_value', None)        
         if not n is None: self._attr_native_min_value=float(n)

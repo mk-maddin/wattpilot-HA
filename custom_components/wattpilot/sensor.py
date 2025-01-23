@@ -15,7 +15,9 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.sensor import (
     SensorStateClass,
     SensorEntity,
+    UNIT_CONVERTERS,
 )
+#from homeassistant.components.sensor.const import UNIT_CONVERTERS
 from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
@@ -96,12 +98,13 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
     def _init_platform_specific(self):
         """Platform specific init actions"""
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
-        self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
+        if (not (unit_converter := UNIT_CONVERTERS.get(self._attr_device_class)) is None and self._attr_native_unit_of_measurement in unit_converter.VALID_UNITS):
+            self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
         self._state_enum = self._entity_cfg.get('enum', None)
         self._state_class = self._entity_cfg.get('state_class', None)
         if not self._state_class is None:
             self._state_class = self._state_class.lower()
-            _LOGGER.debug("%s - %s: _init_platform_specific: specified state_class is: %s)", self._charger_id, self._identifier, self._state_class)
+            _LOGGER.debug("%s - %s: _init_platform_specific: specified state_class is: %s", self._charger_id, self._identifier, self._state_class)
             if self._state_class == 'measurement':
                 self._state_class = SensorStateClass.MEASUREMENT
             elif self._state_class == 'total': 
