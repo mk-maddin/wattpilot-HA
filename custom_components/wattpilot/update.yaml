@@ -5,7 +5,10 @@
 
 update:
 
-#  - id: <name of the charger prop to read - this ALWAYS has to be a property, not attribute>
+#  - id: <name of the charger prop holding updates available list - this ALWAYS has to be a property, not attribute>
+#    id_installed: <name of the charger prop containing currently installed update version - this ALWAYS has to be a property, not attribute>
+#    id_trigger: <optional: name of the charger prop where the to be installed update version is written to, without it no install is possible - this ALWAYS has to be a property, not attribute>
+#    id_status: <optional: name of the charger prop which holds current install percentage of running install - this ALWAYS has to be a property, not attribute>
 #    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
 #    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
 #    name: <optional: name of the entity within HA>
@@ -19,6 +22,9 @@ update:
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
   - id: ocu
+    id_installed: fwv #onv=latest | fwv=installed
+    id_trigger: oct
+#    id_status: ccu
     set_type: string
     name: "Firmware Update"
     description: "Install firmware update available"
