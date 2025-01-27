@@ -21,6 +21,8 @@ from homeassistant.components.update import (
 )
 
 from homeassistant.const import (
+    CONF_PARAMS,
+    CONF_TIMEOUT,
     STATE_UNKNOWN,
 )
 
@@ -29,11 +31,11 @@ from .entities import ChargerPlatformEntity
 from .const import (
     CONF_CHARGER,
     CONF_PUSH_ENTITIES,
+    DEFAULT_TIMEOUT,
     DOMAIN,
 )
 
 from .utils import (
-    async_ProgrammingDebug,
     async_SetChargerProp,
     GetChargerProp,
 )
@@ -117,8 +119,8 @@ class ChargerUpdate(ChargerPlatformEntity, UpdateEntity):
         if not self._identifier_trigger is None:
             self._attr_supported_features |= UpdateEntityFeature.INSTALL
             self._attr_supported_features |= UpdateEntityFeature.SPECIFIC_VERSION
-        if not self._identifier_status is None:
-            self._attr_supported_features |= UpdateEntityFeature.PROGRESS            
+        #if not self._identifier_status is None: #wattpilot disconnects during update
+        #    self._attr_supported_features |= UpdateEntityFeature.PROGRESS            
         _LOGGER.debug("%s - %s: _init_platform_specific complete", self._charger_id, self._identifier)
 
 
@@ -154,20 +156,40 @@ class ChargerUpdate(ChargerPlatformEntity, UpdateEntity):
         except Exception as e:
             _LOGGER.error("%s - %s: _get_versions_dict failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
             return None
- 
- 
+
+
     async def async_install(self, version: str | None, backup: bool, **kwargs: Any ) -> None:
         """Trigger update install"""
         try:
             _LOGGER.debug("%s - %s: async_install: update charger to: %s", self._charger_id, self._identifier, version)
             if version is None: version = self._attr_latest_version
-            v_name = getattr(self._available_versions, version, None)
-            if v_name is none:
-                _LOGGER.error("%s - %s: async_install failed: incorrect version: %s", self._charger_id, self._identifier, version)
-                return
+            v_name = self._available_versions.get(version, None)
+            if v_name is None:
+                _LOGGER.error("%s - %s: async_install failed: version (%s) not in available: %s", self._charger_id, self._identifier, version, self._available_versions)
+                return              
             _LOGGER.debug("%s - %s: async_install: trigger charger update via: %s -> %s", self._charger_id, self._identifier, self._identifier_trigger, v_name)
-            #await async_SetChargerProp(self._charger,self._identifier_trigger,v_name,force=False,force_type=self._set_type)
-            #self._attr_in_progress = true
+            await async_SetChargerProp(self._charger,self._identifier_trigger,v_name,force=True,force_type=self._set_type)
+            entry_data = self.hass.data[DOMAIN].get(self._entry.entry_id, None)
+            if entry_data is None: timeout = DEFAULT_TIMEOUT
+            else: config_params = entry_data.get(CONF_PARAMS, None)
+            if config_params is None: timeout = DEFAULT_TIMEOUT
+            else: timeout = config_params.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
+            timeout = timeout*4
+            timer=0
+            while timeout > timer and self._charger.connected:
+                await asyncio.sleep(1)
+                timer+=1
+            if self._charger.connected:
+                _LOGGER.error("%s - %s: async_install: update timeout during update install: %s seconds", self._charger_id, self._identifier, timeout)
+                return None
+            _LOGGER.debug("%s - %s: async_install: charger disconnected - waiting for reconnect", self._charger_id, self._identifier, timeout)
+            timer=0
+            while timeout > timer and not self._charger.connected:
+                await asyncio.sleep(1)
+                timer+=1         
+            if not self._charger.connected:
+                _LOGGER.error("%s - %s: async_install: update timeout during charger restart: %s seconds", self._charger_id, self._identifier, timeout)
+                return None
         except Exception as e:
             _LOGGER.error("%s - %s: async_install failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
 
@@ -175,17 +197,8 @@ class ChargerUpdate(ChargerPlatformEntity, UpdateEntity):
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         _LOGGER.debug("%s - %s: _async_update_validate_platform_state", self._charger_id, self._identifier)
-        state = await self._hass.async_add_executor_job(self._update_available_versions, state, True)
+        self._attr_installed_version = GetChargerProp(self._charger,self._identifier_installed, None)
+        state = await self.hass.async_add_executor_job(self._update_available_versions, state, True)
         _LOGGER.debug("%s - %s: _async_update_validate_platform_state: state: %s", self._charger_id, self._identifier, state)
         return state
 
-    @callback
-    def async_update_state(self, event: ItemEvent, obj_id: str) -> None:
-        """Update entity state.
-
-        Update in_progress, installed_version and latest_version.
-        """
-        _LOGGER.debug("%s - %s: async_update_state", self._charger_id, self._identifier)
-        _LOGGER.debug("%s - %s: async_update_state: event: %s", self._charger_id, self._identifier, event)
-        _LOGGER.debug("%s - %s: async_update_state: obj_id: %s", self._charger_id, self._identifier, obj_id)
-#        self._attr_installed_version = getattr(self._charger,'firmware',GetChargerProp(self._charger,'onv', None))
