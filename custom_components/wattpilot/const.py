@@ -5,7 +5,7 @@ from typing import Final
 
 DOMAIN: Final = 'wattpilot'
 FUNC_OPTION_UPDATES: Final = 'options_update_listener'
-SUPPORTED_PLATFORMS: Final = ["sensor", "switch", "select", "number", "button"]
+SUPPORTED_PLATFORMS: Final = ["button", "number", "select", "sensor", "switch", "update"]
 
 DEFAULT_NAME: Final = 'Wattpilot'
 CONF_DBG_PROPS: Final = 'debug_properties'
