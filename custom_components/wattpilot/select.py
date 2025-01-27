@@ -79,7 +79,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class ChargerSelect(ChargerPlatformEntity, SelectEntity):
     """Select class for Fronius Wattpilot integration."""
     _state_attr='_attr_current_option'
-    #__attr_current_option = None
 
     def _init_platform_specific(self):
         """Platform specific init actions"""

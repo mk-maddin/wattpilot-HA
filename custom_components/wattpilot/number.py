@@ -99,7 +99,6 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
 
     def _get_platform_specific_state(self): 
         """Platform specific init actions"""
-        #drop-in option for other platforms
         return self.state
 
 

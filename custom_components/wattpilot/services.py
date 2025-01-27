@@ -43,8 +43,6 @@ async def async_registerService(hass: HomeAssistant, name:str , service) -> None
         _LOGGER.debug("%s - async_registerService: %s", DOMAIN, name)
         await asyncio.sleep(0)        
         if not hass.services.has_service(DOMAIN, name):
-            #_LOGGER.info("%s - async_registerServic: register service: %s", DOMAIN, name)
-            #hass.services.async_register(DOMAIN, name, service)
             hass.services.async_register(DOMAIN, name, functools.partial(service, hass))
         else:
             _LOGGER.debug("%s - async_registerServic: service already exists: %s", DOMAIN, name)  

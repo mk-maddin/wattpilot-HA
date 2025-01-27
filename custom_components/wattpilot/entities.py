@@ -241,7 +241,6 @@ class ChargerPlatformEntity(Entity):
             name=getattr(self._charger,'name',getattr(self._charger,'hostname',STATE_UNKNOWN)),
             sw_version=getattr(self._charger,'firmware',STATE_UNKNOWN),
             hw_version=str(GetChargerProp(self._charger,'var',STATE_UNKNOWN))+' KW',
-            #configuration_url=getattr(self._charger,'url',STATE_UNKNOWN)
         )
         #_LOGGER.debug("%s - %s: device_info result: %s", self._charger_id, self._identifier, info)
         return info
@@ -341,8 +340,6 @@ class ChargerPlatformEntity(Entity):
         try:
             if not self.enabled:
                 return None
-#            if not self.available:
-#                return None
             _LOGGER.debug("%s - %s: async_local_push", self._charger_id, self._identifier)
             if self._source == 'attribute':
                 pass
