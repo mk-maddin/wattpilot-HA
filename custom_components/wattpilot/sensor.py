@@ -92,15 +92,15 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
             self._attr_state_class= SensorStateClass((self._entity_cfg.get('state_class')).lower())
         if not self._entity_cfg.get('enum', None) is None:
            self._state_enum = dict(self._entity_cfg.get('enum', None))
-        if not self._entity_cfg.get('html_escape', None) is None:
-           self._html_escape = True
+        if not self._entity_cfg.get('html_unescape', None) is None:
+           self._html_unescape = True
 
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
         try:
             if state is None or state == 'None':
                 state = STATE_UNKNOWN
-            elif hasattr(self,'_html_escape') and self._html_escape:
+            elif hasattr(self,'_html_unescape') and self._html_unescape:
                 state = html.unescape(state)
             elif not hasattr(self,'_state_enum'):
                 pass
