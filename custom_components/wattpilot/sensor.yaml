@@ -24,6 +24,7 @@ sensor:
 #    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
 #    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
+#    html_escape: <optional boolean to escape HTML characters in state value>
 
   - source: attribute
     id: AccessState
@@ -213,6 +214,7 @@ sensor:
     icon: "mdi:solar-power"
     entity_category: diagnostic
     value_id: label
+    html_escape: True
     attribute_ids:
       - paired
       - model
