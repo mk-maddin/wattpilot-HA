@@ -134,3 +134,36 @@ number:
     device_class: energy
     unit_of_measurement: "Wh"
 
+  - id: mpwst
+    set_type: int
+    name: "Phase switch delay"
+    description: "Phase switching if '3-Phase power level' is permanently exceeded during this time"
+    icon: "mdi:solar-power"
+    native_min_value: 0
+    native_max_value: 99999999
+    unit_of_measurement: "ms"
+    enabled: false
+    entity_category: config
+
+  - id: mptwt
+    set_type: int
+    name: "Phase switch interval"
+    description: "Minimum time between phase switching events"
+    icon: "mdi:sun-clock-outline"
+    native_min_value: 0
+    native_max_value: 99999999
+    unit_of_measurement: "ms"
+    enabled: false
+    entity_category: config
+
+  - id: spl3
+    set_type: int
+    name: "3-Phase power level"
+    description: "Value at which the Wattpilot switches from 1- to 3-phase surplus energy charging"
+    icon: "mdi:connection"
+    native_min_value: 0
+    native_max_value: 999999
+    device_class: energy
+    unit_of_measurement: "W"
+    enabled: false
+    entity_category: config
