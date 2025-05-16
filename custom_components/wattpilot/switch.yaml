@@ -82,6 +82,14 @@ switch:
     entity_category: config
     invert: True
 
+  - id: pdte
+    name: "Discharge PV battery"
+    description: "On PV surplus charging allow to discharge the battery to specific level"
+    icon: "mdi:battery-arrow-down-outline"
+    enabled: False
+    entity_category: config
+    firmware: ">=41.7"
+
   - id: su
     name: "Simulate Unplugging"
     description: "Simulate unplugging briefly after a chargig interrupt"
