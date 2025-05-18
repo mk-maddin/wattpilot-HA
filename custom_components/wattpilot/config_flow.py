@@ -30,6 +30,8 @@ from .const import (
     DOMAIN,
 )
 
+from . import options_update_listener
+
 REDACT_CONFIG = {CONF_PASSWORD}
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -196,7 +198,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_final(self):
         try:        
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_final", DOMAIN)
-            title=self.data.get(CONF_FRIENDLY_NAME, self.data.get(CONF_IP_ADDRESS, DEFAULT_NAME))
+            title=self.data.get(CONF_FRIENDLY_NAME, self.data.get(CONF_IP_ADDRESS, DEFAULT_NAME))        
+            if self._config_entry.state is config_entries.ConfigEntryState.SETUP_ERROR:
+                _LOGGER.debug("%s - OptionsFlowHandler: in errorstate - trigger execution of options_update_listener", DOMAIN)
+                await options_update_listener(self.hass, self._config_entry)                
             return self.async_create_entry(title=title, data=self.data)
         except Exception as e:
             _LOGGER.error("%s - OptionsFlowHandler: async_step_final failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)

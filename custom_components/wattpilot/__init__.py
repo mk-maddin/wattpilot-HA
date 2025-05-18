@@ -98,9 +98,13 @@ async def options_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> bo
     """Handle options update."""
     try:
         _LOGGER.debug("%s - options_update_listener: update options and reload config entry", entry.entry_id)
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN].setdefault(entry.entry_id, {})
         entry_data=hass.data[DOMAIN][entry.entry_id]
+        _LOGGER.debug("%s - options_update_listener: set new options", entry.entry_id)
         entry_data[CONF_PARAMS]=entry.options
         hass.config_entries.async_update_entry(entry, data=entry.options)
+        _LOGGER.debug("%s - options_update_listener: async_reload entry", entry.entry_id)
         await hass.config_entries.async_reload(entry.entry_id)
     except Exception as e:
         _LOGGER.error("%s - options_update_listener: update options failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
