@@ -156,7 +156,7 @@ number:
     enabled: false
     entity_category: config
 
-  - id: pdte
+  - id: pdt
     set_type: int
     name: "PV battery discharges until"
     description: "Set the percentage to which the PV battery is discharged in your vehicle during PV surplus."

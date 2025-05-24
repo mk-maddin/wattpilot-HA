@@ -1,7 +1,7 @@
 {
   "domain": "wattpilot",
   "name": "Fronius Wattpilot",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "config_flow": true,
   "documentation": "https://github.com/mk-maddin/wattpilot-HA",
   "requirements": ["wattpilot>=0.2", "pyyaml>=5.3.0", "importlib_metadata>=4.0.0", "aiofiles>=23.2.1", "packaging>=24.0"],
