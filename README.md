@@ -43,11 +43,13 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 ## Open Topics:
 
+* Wattpilot Flex Home at the moment cannot be connected
 * create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 * create a light integration for LED color control etc.
 
 ## Known Errors:
 
+* Wattpilot Flex Home at the moment cannot be connected
 * No explicit known errors
 * See https://github.com/mk-maddin/wattpilot-HA/issues for issues.
 
