@@ -17,8 +17,6 @@ from homeassistant.const import (
     CONF_TIMEOUT,
 )
 
-import wattpilot
-
 from .const import (
     CONF_CHARGER,
     CONF_CONNECTION,
@@ -35,6 +33,31 @@ from .const import (
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
+
+import os
+import sys
+def _dynamic_load_module(modulename,subfolder='src',initfile='__init__.py'):
+    """Try to load a module from local custom component - if not load from system."""
+    try:
+        _LOGGER.debug("%s - _dynamic_load_module: %s", DOMAIN, modulename)
+        base_path = os.path.dirname(__file__)
+        local_module_path = os.path.join(base_path, modulename, subfolder)
+        local_init_path = os.path.join(local_module_path, modulename, initfile)
+        if os.path.exists(local_init_path):
+            _LOGGER.debug("%s - _dynamic_load_module: import local module: %s (%s)", DOMAIN, modulename, local_init_path)
+            if local_module_path not in sys.path:
+                sys.path.insert(0, local_module_path)
+            import wattpilot
+        else:
+            _LOGGER.debug("%s - _dynamic_load_module: import system wide module: %s", DOMAIN, modulename)
+            import wattpilot
+    except Exception as e:
+        _LOGGER.error("%s - _dynamic_load_module: failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
+        raise ImportError("failed to import module %s", modulename)
+    return wattpilot
+
+wattpilot=_dynamic_load_module('wattpilot')
+_LOGGER.debug("%s - utils: imported module from: %s", DOMAIN, wattpilot.__file__)
 
 async def async_ProgrammingDebug(obj, show_all:bool=False) -> None:
     """Async: return all attributes of a specific objec""" 
@@ -243,11 +266,11 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
     """Async: connect charger and handle connection errors"""
     try:
         con = data.get(CONF_CONNECTION,CONF_LOCAL)
-        if charger is None and con == CONF_LOCAL:            
+        if charger is None and con == CONF_LOCAL:
             id = data.get(CONF_IP_ADDRESS, None)
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by ip: %s", entry_or_device_id, CONF_LOCAL, id)     
             charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=False)
-        elif charger is None and con == CONF_CLOUD:            
+        elif charger is None and con == CONF_CLOUD:
             id = data.get(CONF_SERIAL, None)
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by serial: %s", entry_or_device_id, CONF_CLOUD, id)     
             charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True)
