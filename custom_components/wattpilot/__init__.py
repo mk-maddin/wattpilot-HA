@@ -16,6 +16,7 @@ from .const import (
     CONF_PUSH_ENTITIES,
     DOMAIN,
     FUNC_OPTION_UPDATES,
+    FUNC_PROPERTY_UPDATES_CALLBACK,
     SUPPORTED_PLATFORMS,
 )
 from .services import (
@@ -29,6 +30,7 @@ from .services import (
 from .utils import (
     async_ConnectCharger,
     PropertyUpdateHandler,
+    wattpilot,
 )
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -74,7 +76,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         _LOGGER.debug("%s - async_setup_entry: register properties update handler", entry.entry_id)
-        charger.register_property_callback(lambda identifier, value: PropertyUpdateHandler(hass, entry.entry_id, identifier, value))
+        if hasattr(charger, 'register_property_callback') and callable(charger.register_property_callback):
+            charger.register_property_callback(lambda identifier, value: PropertyUpdateHandler(hass, entry.entry_id, identifier, value))
+        elif hasattr(charger, 'add_event_handler') and callable(charger.add_event_handler):
+            entry_data[FUNC_PROPERTY_UPDATES_CALLBACK] = lambda _, identifier, value: PropertyUpdateHandler(hass, entry.entry_id, identifier, value)
+            charger.add_event_handler(wattpilot.Event.WP_PROPERTY, entry_data[FUNC_PROPERTY_UPDATES_CALLBACK])
+        else:
+            _LOGGER.warning("%s - async_setup_entry: charger does not provide roperties updater handler", entry.entry_id)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Could not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
@@ -129,7 +137,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.data[DOMAIN][entry.entry_id][FUNC_OPTION_UPDATES]()
 
             try:
+                _LOGGER.debug("%s - async_unload_entry: remove registered event handlers", entry.entry_id)
                 entry_data=hass.data[DOMAIN][entry.entry_id]
+                if hasattr(charger, 'unregister_property_callback') and callable(charger.unregister_property_callback):
+                    charger.unregister_property_callback()
+                elif hasattr(charger, 'remove_event_handler') and callable(charger.remove_event_handler):
+                    charger.remove_event_handler(wattpilot.Event.WP_PROPERTY,entry_data[FUNC_PROPERTY_UPDATES_CALLBACK])
+            except Exception as e:
+                _LOGGER.error("%s - async_unload_entry: failed to remove registered event handlers: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+                pass
+ 
+            try:                
                 charger = entry_data[CONF_CHARGER]
                 _LOGGER.debug("%s - async_unload_entry: disconnect charger: %s", entry.entry_id, charger)
                 if hasattr(charger, 'disconnect') and callable(charger.disconnect):
@@ -150,4 +168,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception as e:
         _LOGGER.error("%s - async_unload_entry: Unload device failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
-
