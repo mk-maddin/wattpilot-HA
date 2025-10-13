@@ -76,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.debug("%s - async_setup_entry: register properties update handler", entry.entry_id)
         charger.register_property_callback(lambda identifier, value: PropertyUpdateHandler(hass, entry.entry_id, identifier, value))
     except Exception as e:
-        _LOGGER.error("%s - async_setup_entry: Cloud not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_setup_entry: Could not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return False
 
     try:
