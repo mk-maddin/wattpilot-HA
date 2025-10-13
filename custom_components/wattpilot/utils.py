@@ -274,9 +274,11 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
             id = data.get(CONF_SERIAL, None)
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by serial: %s", entry_or_device_id, CONF_CLOUD, id)     
             charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True)
-        else:
+        elif charger is not None:
             _LOGGER.debug("%s - async_ConnectCharger: Reconnect existing charger: %s", entry_or_device_id, charger.name)
             id = charger.name
+        else:
+            _LOGGER.warning("%s - async_ConnectCharger: Unknown or empty connection type: %s", entry_or_device_id, con)
         charger.connect()
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Connecting charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
