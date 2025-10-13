@@ -31,6 +31,7 @@ Not me neither any of contributors to this or any prerequired/dependency project
 
 Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energy/installers-partners/products-solutions/residential-energy-solutions/e-mobility-and-photovoltaic-residential/wattpilot-ev-charging-solution-for-homes) wallbox/electro vehicle charging devices via home assistant with the following features:
 
+* works with wattpilot, wattpilot V2 & wattpilot flex
 * connect charger via local LAN or via Cloud
 * charging mode change
 * start / stop charging
@@ -43,13 +44,10 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 
 ## Open Topics:
 
-* Wattpilot Flex Home at the moment cannot be connected
-* create an [update entity](https://www.home-assistant.io/blog/2022/04/06/release-20224/#introducing-update-entities)
 * create a light integration for LED color control etc.
 
 ## Known Errors:
 
-* Wattpilot Flex Home at the moment cannot be connected
 * No explicit known errors
 * See https://github.com/mk-maddin/wattpilot-HA/issues for issues.
 
