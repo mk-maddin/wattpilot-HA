@@ -76,6 +76,10 @@ body:
         - 22KW
         - 11KW-V2
         - 22KW-V2
+        - 11KW-Flex-C6
+        - 22KW-Flex-C6
+        - 11KW-Flex-C6E
+        - 22KW-Flex-C6E
   - type: markdown
     attributes:
       value: |
