@@ -22,6 +22,10 @@ from .const import (
     DOMAIN,
 )
 
+from .utils import (
+    wattpilot,
+)
+
 REDACT_CONFIG = {CONF_IP_ADDRESS, CONF_PASSWORD}
 REDACT_ALLPROPS = {'wifis', 'scan', 'data', 'dll', 'cak', 'ocppck', 'ocppcc', 'ocppsc' }
 
@@ -55,6 +59,7 @@ async def async_get_config_entry_diagnostics( hass: HomeAssistant, entry: Config
     try:
         _LOGGER.debug("%s - async_get_config_entry_diagnostics %s: Add python modules version", entry.entry_id, platform)
         diag["wattpilot_module"] = version('wattpilot')
+        diag["wattpilot_file"] = wattpilot.__file__
         diag["pyyaml_module"] = version('pyyaml')
         diag["importlib_metadata_module"] = version('importlib_metadata')
         diag["aiofiles_module"] = version('aiofiles')

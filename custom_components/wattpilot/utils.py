@@ -57,7 +57,7 @@ def _dynamic_load_module(modulename,subfolder='src',initfile='__init__.py'):
     return wattpilot
 
 wattpilot=_dynamic_load_module('wattpilot')
-_LOGGER.debug("%s - utils: imported module from: %s", DOMAIN, wattpilot.__file__)
+_LOGGER.debug("%s - utils: imported module from: %s (%s)", DOMAIN, wattpilot.__file__, getattr(wattpilot,'__version__','0.2.2?'))
 
 async def async_ProgrammingDebug(obj, show_all:bool=False) -> None:
     """Async: return all attributes of a specific objec""" 
@@ -296,7 +296,7 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
             _LOGGER.error("%s - async_ConnectCharger: Try to restart charger via Wattpilot app", entry_or_device_id)
             return False
         elif not charger.allPropsInitialized: 
-            _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not initialized: %s (%s sec)", entry_or_device_id, charger.allPropsInitialized, timeout)
+            _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not initialized: %s (%s sec)", entry_or_device_id, charger.allPropsInitialized, timeout) 
             return False
         elif not timeout > timer:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - unknown reason: %s sec", entry_or_device_id, timeout)
@@ -308,3 +308,17 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
     _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  
     return charger
 
+
+async def async_DisconnectCharger(entry_or_device_id, charger):
+    """Async: disconnect charger and handle connection errors"""
+    try:
+        _LOGGER.debug("%s - async_DisconnectCharger: disconnect charger: %s", entry_or_device_id, charger)
+        if hasattr(charger, 'disconnect') and callable(charger.disconnect):
+            charger.disconnect()
+        else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
+            charger._wsapp.close()
+            charger._connected=False
+        return None
+    except Exception as e:
+        _LOGGER.error("%s - async_DisconnectCharger: Disconnect charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        return None

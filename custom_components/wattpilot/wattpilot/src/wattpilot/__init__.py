@@ -17,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 CONST_HASH_PBKDF2 = 'pbkdf2'
 CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
+__version__ = '0.2.2a'
+
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -46,6 +48,7 @@ class Event(Enum):
     WS_ERROR = auto(),
     WS_MESSAGE = auto(),
     WS_OPEN = auto(),
+
 
 class Wattpilot(object):
     
@@ -613,9 +616,12 @@ class Wattpilot(object):
         for key in props:
             self.__update_property(key,props[key])
         self.__call_event_handler(Event.WP_FULL_STATUS, message)
-        self._allPropsInitialized = not message.partial
-        if message.partial == False:
-            self.__call_event_handler(Event.WP_FULL_STATUS_FINISHED, message)
+        if hasattr(message,'partial'):
+            self._allPropsInitialized = not message.partial
+            if message.partial == False:
+                self.__call_event_handler(Event.WP_FULL_STATUS_FINISHED, message)
+        else:
+            self.__allPropsInitializedFallback=True
 
     def __on_AuthError(self,message):
         if message.message=="Wrong password":
@@ -628,6 +634,9 @@ class Wattpilot(object):
         for key in props:
             self.__update_property(key,props[key])
         self.__call_event_handler(Event.WP_DELTA_STATUS, message)
+        if self.__allPropsInitializedFallback and not self._allPropsInitialized:
+            self._allPropsInitialized = True
+            self.__call_event_handler(Event.WP_FULL_STATUS_FINISHED, message)
 
     def __on_clearInverters(self,message):
         self.__call_event_handler(Event.WP_CLEAR_INVERTERS, message)
@@ -708,6 +717,7 @@ class Wattpilot(object):
         self._connected = False
         self._allProps={}
         self._allPropsInitialized=False
+        self.__allPropsInitializedFallback=False
         self._voltage1=None
         self._voltage2=None
         self._voltage3=None

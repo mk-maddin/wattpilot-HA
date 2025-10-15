@@ -29,6 +29,8 @@ from .services import (
 )
 from .utils import (
     async_ConnectCharger,
+    async_DisconnectCharger,
+    async_ProgrammingDebug,
     PropertyUpdateHandler,
     wattpilot,
 )
@@ -45,6 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if charger == False: return False 
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Connecting charger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_DisconnectCharger(entry.entry_id, charger)
         return False
 
     try:
@@ -58,6 +61,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data.setdefault(CONF_PUSH_ENTITIES, {})
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Creating data store failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_DisconnectCharger(entry.entry_id, charger)
+        async_unload_entry(hass, entry)
         return False
 
     try:
@@ -65,6 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_data[FUNC_OPTION_UPDATES] = entry.add_update_listener(options_update_listener) 
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Register option updates listener failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_unload_entry(hass, entry)
         return False
 
     try:
@@ -72,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, SUPPORTED_PLATFORMS)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Setup trigger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_unload_entry(hass, entry)
         return False
 
     try:
@@ -85,6 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.warning("%s - async_setup_entry: charger does not provide roperties updater handler", entry.entry_id)
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Could not register properties updater handler: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_unload_entry(hass, entry)
         return False
 
     try:
@@ -96,6 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_registerService(hass, "set_next_trip", async_service_SetNextTrip)        
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: register services failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        async_unload_entry(hass, entry)
         return False
 
     _LOGGER.debug("%s - async_setup_entry: Completed", entry.entry_id)
@@ -149,12 +158,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
  
             try:                
                 charger = entry_data[CONF_CHARGER]
-                _LOGGER.debug("%s - async_unload_entry: disconnect charger: %s", entry.entry_id, charger)
-                if hasattr(charger, 'disconnect') and callable(charger.disconnect):
-                    charger.disconnect()
-                else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
-                    charger._wsapp.close()
-                    charger._connected=False
+                async_DisconnectCharger(entry.entry_id, charger)
                 charger=None
                 entry_data[CONF_CHARGER]=None                
             except Exception as e:
