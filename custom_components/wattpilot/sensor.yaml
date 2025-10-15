@@ -495,7 +495,7 @@ sensor:
     device_class: energy
     state_class: total_increasing
     unit_of_measurement: "Wh"
-    default_state: -1
+    default_state: 0
 
   - source: property
     id: wst
