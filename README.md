@@ -45,6 +45,7 @@ Allows for control of [Fronius Wattpilot](https://www.fronius.com/en/solar-energ
 ## Open Topics:
 
 * create a light integration for LED color control etc.
+* evaluate entity unique ID generation using WP serial number
 
 ## Known Errors:
 
