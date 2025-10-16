@@ -8,7 +8,7 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_PARAMS
-from homeassistant.helpers.integration_platform import async_get_integration_version
+from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_CHARGER,
@@ -42,13 +42,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up config entry: %s", entry.entry_id)
 
     try:
-        v = await async_get_integration_version(hass, DOMAIN)
+        integration = await async_get_integration(hass, DOMAIN)
+        v = integration.version
         if v:
             _LOGGER.debug("%s - async_setup_entry: %s integration version: %s", entry.entry_id, DOMAIN, v)
         else:
             _LOGGER.debug("%s - async_setup_entry: Unknown %s integration version", entry.entry_id, DOMAIN)            
     except Exception as e:
         _LOGGER.warning("%s - async_setup_entry: Unable to determine %s integration version", entry.entry_id, DOMAIN)
+        pass
 
     try: 
         _LOGGER.debug("%s - async_setup_entry: Connecting charger", entry.entry_id)
