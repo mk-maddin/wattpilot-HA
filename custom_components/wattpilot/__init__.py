@@ -8,7 +8,7 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_PARAMS
-
+from homeassistant.helpers.integration_platform import async_get_integration_version
 
 from .const import (
     CONF_CHARGER,
@@ -40,6 +40,15 @@ _LOGGER: Final = logging.getLogger(__name__)
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a charger from the config entry."""
     _LOGGER.debug("Setting up config entry: %s", entry.entry_id)
+
+    try:
+        v = await async_get_integration_version(hass, DOMAIN)
+        if v:
+            _LOGGER.debug("%s - async_setup_entry: %s integration version: %s", entry.entry_id, DOMAIN, v)
+        else:
+            _LOGGER.debug("%s - async_setup_entry: Unknown %s integration version", entry.entry_id, DOMAIN)            
+    except Exception as e:
+        _LOGGER.warning("%s - async_setup_entry: Unable to determine %s integration version", entry.entry_id, DOMAIN)
 
     try: 
         _LOGGER.debug("%s - async_setup_entry: Connecting charger", entry.entry_id)
@@ -144,6 +153,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if all_ok:
             _LOGGER.debug("%s - async_unload_entry: Unload option updates listener: %s ", entry.entry_id, FUNC_OPTION_UPDATES)
             hass.data[DOMAIN][entry.entry_id][FUNC_OPTION_UPDATES]()
+            charger = entry_data[CONF_CHARGER]
 
             try:
                 _LOGGER.debug("%s - async_unload_entry: remove registered event handlers", entry.entry_id)
@@ -156,9 +166,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 _LOGGER.error("%s - async_unload_entry: failed to remove registered event handlers: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
                 pass
  
-            try:                
-                charger = entry_data[CONF_CHARGER]
-                async_DisconnectCharger(entry.entry_id, charger)
+            try:
+                await async_DisconnectCharger(entry.entry_id, charger)
                 charger=None
                 entry_data[CONF_CHARGER]=None                
             except Exception as e:
