@@ -155,11 +155,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if all_ok:
             _LOGGER.debug("%s - async_unload_entry: Unload option updates listener: %s ", entry.entry_id, FUNC_OPTION_UPDATES)
             hass.data[DOMAIN][entry.entry_id][FUNC_OPTION_UPDATES]()
+            entry_data=hass.data[DOMAIN][entry.entry_id]
             charger = entry_data[CONF_CHARGER]
 
             try:
                 _LOGGER.debug("%s - async_unload_entry: remove registered event handlers", entry.entry_id)
-                entry_data=hass.data[DOMAIN][entry.entry_id]
                 if hasattr(charger, 'unregister_property_callback') and callable(charger.unregister_property_callback):
                     charger.unregister_property_callback()
                 elif hasattr(charger, 'remove_event_handler') and callable(charger.remove_event_handler):
