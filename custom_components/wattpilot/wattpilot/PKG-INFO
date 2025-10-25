@@ -1,6 +1,6 @@
-Metadata-Version: 2.2
+Metadata-Version: 0.2.2b
 Name: wattpilot
-Version: 0.2.2
+Version: 0.2.2b
 Summary: Python library to connect to a Fronius Wattpilot Wallbox
 Home-page: https://github.com/joscha82/wattpilot
 Author: Joscha Arenz

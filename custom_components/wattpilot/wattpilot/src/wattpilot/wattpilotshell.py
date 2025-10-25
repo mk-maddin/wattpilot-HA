@@ -1,4 +1,4 @@
-import cmd2
+import cmd
 import json
 import logging
 import math
@@ -10,7 +10,6 @@ import wattpilot
 import yaml
 import pkgutil
 
-from enum import Enum, auto
 from importlib.metadata import version
 from time import sleep
 from threading import Event
@@ -57,6 +56,8 @@ def utils_value2json(value):
 #### Wattpilot Functions ####
 
 def wp_read_apidef():
+    global WATTPILOT_SPLIT_PROPERTIES
+
     api_definition = pkgutil.get_data(__name__, "ressources/wattpilot.yaml")
     wpdef = {
         "config": {},
@@ -74,7 +75,7 @@ def wp_read_apidef():
         for p in wpdef["config"]["properties"]:
             wpdef["properties"] = utils_add_to_dict_unique(
                 wpdef["properties"], p["key"], p)
-            if "childProps" in p and Cfg.WATTPILOT_SPLIT_PROPERTIES.val:
+            if "childProps" in p and WATTPILOT_SPLIT_PROPERTIES:
                 for cp in p["childProps"]:
                     cp = {
                         # Defaults for split properties:
@@ -100,36 +101,14 @@ def wp_read_apidef():
 def wp_initialize(host, password):
     global wp
     # Connect to Wattpilot:
-    _LOGGER.debug(f"wp_initialize()")
     wp = wattpilot.Wattpilot(host, password)
-    wp._auto_reconnect = Cfg.WATTPILOT_AUTO_RECONNECT.val
-    wp._reconnect_interval = Cfg.WATTPILOT_RECONNECT_INTERVAL.val
-    wp.add_event_handler(wattpilot.Event.WS_CLOSE, wp_handle_events)
-    wp.add_event_handler(wattpilot.Event.WS_OPEN, wp_handle_events)
-    return wp
-
-def wp_connect(wp, wait_for_timeouts=True):
     wp.connect()
-    # Wait for connection and initialization - TODO: Use event handler instead to make it more responsive!
-    if wait_for_timeouts:
-        utils_wait_timeout(lambda: wp.connected, Cfg.WATTPILOT_CONNECT_TIMEOUT.val) or exit(
-            "ERROR: Timeout while connecting to Wattpilot!")
-        utils_wait_timeout(lambda: wp.allPropsInitialized, Cfg.WATTPILOT_INIT_TIMEOUT.val) or exit(
-            "ERROR: Timeout while waiting for property initialization!")
+    # Wait for connection and initialization:
+    utils_wait_timeout(lambda: wp.connected, WATTPILOT_CONNECT_TIMEOUT) or exit(
+        "ERROR: Timeout while connecting to Wattpilot!")
+    utils_wait_timeout(lambda: wp.allPropsInitialized, WATTPILOT_INIT_TIMEOUT) or exit(
+        "ERROR: Timeout while waiting for property initialization!")
     return wp
-
-
-def wp_handle_events(event, *args):
-    global mqtt_client
-    _LOGGER.debug(f"wp_handle_events(event={event},{args})")
-    if not mqtt_client:
-        _LOGGER.debug(f"wp_handle_events(): MQTT client not yet initialized - status publishing skipped.")
-        return
-    available_topic = mqtt_subst_topic(Cfg.MQTT_TOPIC_AVAILABLE.val, {})
-    if event['type'] == 'on_close':
-        mqtt_client.publish(available_topic, payload="offline", qos=0, retain=True)
-    elif event['type'] == 'on_open':
-        mqtt_client.publish(available_topic, payload="online", qos=0, retain=True)
 
 
 def wp_get_child_prop_value(cp):
@@ -165,11 +144,12 @@ def wp_get_child_prop_value(cp):
 
 
 def wp_get_all_props(available_only=True):
+    global WATTPILOT_SPLIT_PROPERTIES
     global wp
     global wpdef
     if available_only:
         props = {k: v for k, v in wp.allProps.items()}
-        if Cfg.WATTPILOT_SPLIT_PROPERTIES.val:
+        if WATTPILOT_SPLIT_PROPERTIES:
             for cp_key in wpdef["splitProperties"]:
                 props[cp_key] = wp_get_child_prop_value(cp_key)
     else:
@@ -180,17 +160,12 @@ def wp_get_all_props(available_only=True):
 
 #### Shell Functions ####
 
-class WattpilotShell(cmd2.Cmd):
+class WattpilotShell(cmd.Cmd):
     intro = f"Welcome to the Wattpilot Shell {version('wattpilot')}.   Type help or ? to list commands.\n"
     prompt = 'wattpilot> '
     file = None
     watching_messages = []
     watching_properties = []
-
-    def __init__(self, wp, wpdef):
-        super().__init__()
-        self.wp = wp
-        self.wpdef = wpdef
 
     def postloop(self) -> None:
         print()
@@ -203,16 +178,19 @@ class WattpilotShell(cmd2.Cmd):
         return [x for x in clist if x.startswith(text)]
 
     def _complete_message(self, text, sender=None):
-        return [md["key"] for md in self.wpdef["messages"].values() if (not sender or md["sender"] == sender) and md["key"].startswith(text)]
+        global wpdef
+        return [md["key"] for md in wpdef["messages"].values() if (not sender or md["sender"] == sender) and md["key"].startswith(text)]
 
     def _complete_propname(self, text, rw=False, available_only=True):
-        return [k for k in wp_get_all_props(available_only).keys() if (not rw or ("rw" in self.wpdef["properties"][k] and self.wpdef["properties"][k]["rw"] == "R/W")) and k.startswith(text)]
+        global wpdef
+        return [k for k in wp_get_all_props(available_only).keys() if (not rw or ("rw" in wpdef["properties"][k] and wpdef["properties"][k]["rw"] == "R/W")) and k.startswith(text)]
 
     def _complete_values(self, text, line):
+        global wpdef
         token = line.split(' ')
         if len(token) == 2:
             return self._complete_propname(text, rw=False, available_only=True) + ['<propRegex>']
-        elif len(token) == 3 and text in self.wpdef["properties"]:
+        elif len(token) == 3 and text in wpdef["properties"]:
             return ['<value>', '<valueRegex>']
         return []
 
@@ -221,51 +199,39 @@ class WattpilotShell(cmd2.Cmd):
         return True
 
     def do_connect(self, arg: str) -> bool | None:
-        """Connect to Wattpilot
+        """Connect to Wattpilot (using WATTPILOT_* env variables)
 Usage: connect"""
-        wp_connect(self.wp)
-
-    def do_disconnect(self, arg: str) -> bool | None:
-        """Disconnect from Wattpilot
-Usage: disconnect"""
-        wp.disconnect()
-
-    def do_docs(self, arg: str) -> bool | None:
-        """Show markdown documentation for environment variables
-Usage: docs"""
-        Cfg.docs_markdown()
-
-    def do_config(self, arg: str) -> bool | None:
-        """Show configuration values
-Usage: config"""
-        for e in list(Cfg):
-            #print(f"{e.name}={os.environ.get(e.name,'')} (-> {e.val})")
-            print(e.value.format())
+        global WATTPILOT_HOST
+        global WATTPILOT_PASSWORD
+        global wp
+        wp = wp_initialize(WATTPILOT_HOST, WATTPILOT_PASSWORD)
 
     def do_exit(self, arg: str) -> bool | None:
         """Exit the shell
 Usage: exit"""
         return True
 
-    def do_propget(self, arg: str) -> bool | None:
+    def do_get(self, arg: str) -> bool | None:
         """Get a property value
-Usage: propget <propName>"""
+Usage: get <propName>"""
+        global wp
+        global wpdef
         args = arg.split(' ')
         if not self._ensure_connected():
             return
         if len(args) < 1 or arg == '':
             print(f"ERROR: Wrong number of arguments!")
-        elif args[0] in self.wp.allProps:
-            pd = self.wpdef["properties"][args[0]]
-            print(mqtt_get_encoded_property(pd, self.wp.allProps[args[0]]))
-        elif args[0] in self.wpdef["splitProperties"]:
-            pd = self.wpdef["properties"][args[0]]
+        elif args[0] in wp.allProps:
+            pd = wpdef["properties"][args[0]]
+            print(mqtt_get_encoded_property(pd, wp.allProps[args[0]]))
+        elif args[0] in wpdef["splitProperties"]:
+            pd = wpdef["properties"][args[0]]
             print(mqtt_get_encoded_property(
                 pd, wp_get_child_prop_value(pd["key"])))
         else:
             print(f"ERROR: Unknown property: {args[0]}")
 
-    def complete_propget(self, text, line, begidx, endidx):
+    def complete_get(self, text, line, begidx, endidx):
         return self._complete_propname(text, rw=False, available_only=True)
 
     def do_ha(self, arg: str) -> bool | None:
@@ -292,6 +258,8 @@ Home Assistant commands:
     Let HA remove a discovered entity representing the property <propName>
     NOTE: Removing of disabled entities may still be broken in HA and require a restart of HA.
 """
+        global HA_ENABLED
+        global HA_PROPERTIES
         global mqtt_client
         args = arg.split(' ')
         if not self._ensure_connected():
@@ -301,66 +269,71 @@ Home Assistant commands:
             return
         if args[0] == "properties":
             print(
-                f"List of properties activated for discovery: {Cfg.HA_PROPERTIES.val}")
+                f"List of properties activated for discovery: {HA_PROPERTIES}")
         elif args[0] == "start":
-            Cfg.HA_ENABLED.val = True
+            HA_ENABLED = 'true'
             mqtt_client = ha_setup(wp)
         elif args[0] == "stop":
             ha_stop(mqtt_client)
-            Cfg.HA_ENABLED.val = False
+            HA_ENABLED = 'false'
         elif args[0] == "status":
             print(
-                f"HA discovery is {'enabled' if Cfg.HA_ENABLED.val else 'disabled'}.")
+                f"HA discovery is {'enabled' if HA_ENABLED == 'true' else 'disabled'}.")
         elif len(args) > 1 and args[0] in ['enable', 'disable', 'discover', 'undiscover']:
             self._ha_prop_cmds(args[0], args[1])
         else:
             print(f"ERROR: Unsupported argument: {args[0]}")
 
     def _ha_prop_cmds(self, cmd, prop_name):
+        global HA_PROPERTIES
+        global MQTT_PROPERTIES
         global mqtt_client
+        global wp
+        global wpdef
         if prop_name not in wpdef["properties"]:
             print(f"ERROR: Unknown property '{prop_name}!")
         elif cmd == "enable":
-            if prop_name not in Cfg.MQTT_PROPERTIES.val:
-                Cfg.MQTT_PROPERTIES.val.append(prop_name)
+            if prop_name not in MQTT_PROPERTIES:
+                MQTT_PROPERTIES.append(prop_name)
             ha_discover_property(
-                self.wp, mqtt_client, self.wpdef["properties"][prop_name], disable_discovery=False, force_enablement=True)
+                wp, mqtt_client, wpdef["properties"][prop_name], disable_discovery=False, force_enablement=True)
         elif cmd == "disable":
-            if prop_name in Cfg.MQTT_PROPERTIES.val:
-                Cfg.MQTT_PROPERTIES.val.remove(prop_name)
+            if prop_name in MQTT_PROPERTIES:
+                MQTT_PROPERTIES.remove(prop_name)
             ha_discover_property(
-                self.wp, mqtt_client, self.wpdef["properties"][prop_name], disable_discovery=False, force_enablement=False)
+                wp, mqtt_client, wpdef["properties"][prop_name], disable_discovery=False, force_enablement=False)
         elif cmd == "discover":
-            if prop_name not in Cfg.HA_PROPERTIES.val:
-                Cfg.HA_PROPERTIES.val.append(prop_name)
-            if prop_name not in Cfg.MQTT_PROPERTIES.val:
-                Cfg.MQTT_PROPERTIES.val.append(prop_name)
+            if prop_name not in HA_PROPERTIES:
+                HA_PROPERTIES.append(prop_name)
+            if prop_name not in MQTT_PROPERTIES:
+                MQTT_PROPERTIES.append(prop_name)
             ha_discover_property(
-                self.wp, mqtt_client, self.wpdef["properties"][prop_name], disable_discovery=False, force_enablement=True)
+                wp, mqtt_client, wpdef["properties"][prop_name], disable_discovery=False, force_enablement=True)
         elif cmd == "undiscover":
-            if prop_name in Cfg.HA_PROPERTIES.val:
-                Cfg.HA_PROPERTIES.val.remove(prop_name)
-            if prop_name in Cfg.MQTT_PROPERTIES.val:
-                Cfg.MQTT_PROPERTIES.val.remove(prop_name)
+            if prop_name in HA_PROPERTIES:
+                HA_PROPERTIES.remove(prop_name)
+            if prop_name in MQTT_PROPERTIES:
+                MQTT_PROPERTIES.remove(prop_name)
             ha_discover_property(
-                self.wp, mqtt_client, self.wpdef["properties"][prop_name], disable_discovery=True, force_enablement=False)
+                wp, mqtt_client, wpdef["properties"][prop_name], disable_discovery=True, force_enablement=False)
 
     def complete_ha(self, text, line, begidx, endidx):
         token = line.split(' ')
         if len(token) == 2:
             return self._complete_list(['enable', 'disable', 'discover', 'properties', 'start', 'status', 'stop', 'undiscover'], text)
         elif len(token) == 3 and token[1] == 'discover':
-            return self._complete_list([p for p in self._complete_propname(text, available_only=True) if p not in Cfg.HA_PROPERTIES.val], text)
+            return self._complete_list([p for p in self._complete_propname(text, available_only=True) if p not in HA_PROPERTIES], text)
         elif len(token) == 3 and token[1] in ['enable', 'disable', 'undiscover']:
-            return self._complete_list(Cfg.HA_PROPERTIES.val, text)
+            return self._complete_list(HA_PROPERTIES, text)
         return []
 
     def do_info(self, arg: str) -> bool | None:
         """Print device infos
 Usage: info"""
+        global wp
         if not self._ensure_connected():
             return
-        print(self.wp)
+        print(wp)
 
     def do_mqtt(self, arg: str) -> bool | None:
         """Control the MQTT bridge
@@ -388,7 +361,9 @@ MQTT commands:
   unpublish <property> <propName>
     Disable publishing of a certain property
 """
+        global MQTT_ENABLED
         global mqtt_client
+        global wp
         args = arg.split(' ')
         if not self._ensure_connected():
             return
@@ -397,43 +372,47 @@ MQTT commands:
             return
         if args[0] == "properties":
             print(
-                f"List of properties activated for MQTT publishing: {Cfg.MQTT_PROPERTIES.val}")
+                f"List of properties activated for MQTT publishing: {MQTT_PROPERTIES}")
         elif args[0] == "start":
-            Cfg.MQTT_ENABLED.val = True
-            mqtt_client = mqtt_setup(self.wp)
+            MQTT_ENABLED = 'true'
+            mqtt_client = mqtt_setup(wp)
         elif args[0] == "stop":
             mqtt_stop(mqtt_client)
-            Cfg.MQTT_ENABLED.val = False
+            MQTT_ENABLED = 'false'
         elif args[0] == "status":
             print(
-                f"MQTT client is {'enabled' if Cfg.MQTT_ENABLED.val else 'disabled'}.")
+                f"MQTT client is {'enabled' if MQTT_ENABLED == 'true' else 'disabled'}.")
         elif len(args) > 1 and args[0] in ['publish', 'unpublish']:
             self._mqtt_prop_cmds(args[0], args[1])
         else:
             print(f"ERROR: Unsupported argument: {args[0]}")
 
     def _mqtt_prop_cmds(self, cmd, prop_name):
+        global MQTT_PROPERTIES
         global mqtt_client
-        if prop_name not in self.wpdef["properties"]:
+        global wp
+        global wpdef
+        if prop_name not in wpdef["properties"]:
             print(f"ERROR: Undefined property '{prop_name}'!")
-        elif cmd == "publish" and prop_name not in Cfg.MQTT_PROPERTIES.val:
-            Cfg.MQTT_PROPERTIES.val.append(prop_name)
-        elif cmd == "unpublish" and prop_name in Cfg.MQTT_PROPERTIES.val:
-            Cfg.MQTT_PROPERTIES.val.remove(prop_name)
+        elif cmd == "publish" and prop_name not in MQTT_PROPERTIES:
+            MQTT_PROPERTIES.append(prop_name)
+        elif cmd == "unpublish" and prop_name in MQTT_PROPERTIES:
+            MQTT_PROPERTIES.remove(prop_name)
 
     def complete_mqtt(self, text, line, begidx, endidx):
         token = line.split(' ')
         if len(token) == 2:
             return self._complete_list(['properties', 'publish', 'start', 'status', 'stop', 'unpublish'], text)
         elif len(token) == 3 and token[1] == 'publish':
-            return self._complete_list([p for p in self._complete_propname(text, available_only=True) if p not in Cfg.MQTT_PROPERTIES.val], text)
+            return self._complete_list([p for p in self._complete_propname(text, available_only=True) if p not in MQTT_PROPERTIES], text)
         elif len(token) == 3 and token[1] == 'unpublish':
-            return self._complete_list(Cfg.MQTT_PROPERTIES.val, text)
+            return self._complete_list(MQTT_PROPERTIES, text)
         return []
 
     def do_properties(self, arg: str) -> bool | None:
         """List property definitions and values
 Usage: properties [propRegex]"""
+        global wpdef
         if not self._ensure_connected():
             return
         props = self._get_props_matching_regex(arg, available_only=False)
@@ -442,7 +421,7 @@ Usage: properties [propRegex]"""
             return
         print(f"Properties:")
         for prop_name, value in sorted(props.items()):
-            self._print_prop_info(self.wpdef["properties"][prop_name], value)
+            self._print_prop_info(wpdef["properties"][prop_name], value)
         print()
 
     def complete_properties(self, text, line, begidx, endidx):
@@ -451,6 +430,7 @@ Usage: properties [propRegex]"""
     def do_rawvalues(self, arg: str) -> bool | None:
         """List raw values of properties (without value mapping)
 Usage: rawvalues [propRegex] [valueRegex]"""
+        global wp
         if not self._ensure_connected():
             return
         print(f"List raw values of properties (without value mapping):")
@@ -474,9 +454,11 @@ Usage: server"""
             _LOGGER.info("Server shutting down.")
         return True
 
-    def do_propset(self, arg: str) -> bool | None:
+    def do_set(self, arg: str) -> bool | None:
         """Set a property value
-Usage: propset <propName> <value>"""
+Usage: set <propName> <value>"""
+        global wp
+        global wpdef
         args = arg.split(' ')
         if not self._ensure_connected():
             return
@@ -494,34 +476,15 @@ Usage: propset <propName> <value>"""
             else:
                 v = str(args[1])
             wp.send_update(args[0], mqtt_get_decoded_property(
-                self.wpdef["properties"][args[0]], v))
+                wpdef["properties"][args[0]], v))
 
-    def do_UpdateInverter(self, arg: str) -> bool | None:
-        """Performs an Inverter Operation
-Usage: updateInverter pair|unpair <inverterID>
-<inverterID> is normally in the form 123.456789"""
-        global wp
+    def complete_set(self, text, line, begidx, endidx):
         global wpdef
-        args = arg.split(' ')
-        if not self._ensure_connected():
-            return
-        if len(args) < 2 or arg == '':
-            print(f"ERROR: Wrong number of arguments!")
-        elif args[0] not in ["pair", "unpair"]:
-            print(f"ERROR: Unknown Operation: {args[0]}")
-        else:
-            if args[0] == 'pair':
-                wp.pairInverter(args[1])
-            if args[0] == 'unpair':
-                wp.unpairInverter(args[1])
-            
-
-    def complete_propset(self, text, line, begidx, endidx):
         token = line.split(' ')
         if len(token) == 2:
             return self._complete_propname(text, rw=True, available_only=True)
-        elif len(token) == 3 and token[1] in self.wpdef["properties"]:
-            pd = self.wpdef["properties"][token[1]]
+        elif len(token) == 3 and token[1] in wpdef["properties"]:
+            pd = wpdef["properties"][token[1]]
             if "jsonType" in pd and pd["jsonType"] == 'boolean':
                 return [v for v in ['false', 'true'] if v.startswith(text)]
             elif "valueMap" in pd:
@@ -532,35 +495,32 @@ Usage: updateInverter pair|unpair <inverterID>
 
     def do_unwatch(self, arg: str) -> bool | None:
         """Unwatch a message or property
-Usage: unwatch <event|message|property> <eventType|msgType|propName>"""
+Usage: unwatch <message|property> <msgType|propName>"""
+        global wp
         args = arg.split(' ')
+        if not self._ensure_connected():
+            return
         if len(args) < 2 or arg == '':
             print(f"ERROR: Wrong number of arguments!")
-        elif args[0] == 'event' and args[1] not in [e.name for e in list(wattpilot.Event)]:
-            print(f"ERROR: Event of type '{args[1]}' is not watched")
-        elif args[0] == 'event':
-            self.wp.remove_event_handler(wattpilot.Event[args[1]], self._watched_event_received)
         elif args[0] == 'message' and args[1] not in self.watching_messages:
             print(f"ERROR: Message of type '{args[1]}' is not watched")
         elif args[0] == 'message':
             self.watching_messages.remove(args[1])
             if len(self.watching_messages) == 0:
-                self.wp.remove_event_handler(wattpilot.Event.WS_MESSAGE,self._watched_message_received)
+                wp.unregister_message_callback()
         elif args[0] == 'property' and args[1] not in self.watching_properties:
             print(f"ERROR: Property with name '{args[1]}' is not watched")
         elif args[0] == 'property':
             self.watching_properties.remove(args[1])
             if len(self.watching_properties) == 0:
-                self.wp.remove_event_handler(wattpilot.Event.WP_PROPERTY,self._watched_property_changed)
+                wp.unregister_property_callback()
         else:
             print(f"ERROR: Unknown watch type: {args[0]}")
 
     def complete_unwatch(self, text, line, begidx, endidx):
         token = line.split(' ')
         if len(token) == 2:
-            return self._complete_list(['event', 'message', 'property'], text)
-        elif len(token) == 3 and token[1] == 'event':
-            return self._complete_list([e.name for e in list(wattpilot.Event) if len(wp._event_handler[e])>0], text)
+            return self._complete_list(['message', 'property'], text)
         elif len(token) == 3 and token[1] == 'message':
             return self._complete_list(self.watching_messages, text)
         elif len(token) == 3 and token[1] == 'property':
@@ -570,34 +530,36 @@ Usage: unwatch <event|message|property> <eventType|msgType|propName>"""
     def do_values(self, arg: str) -> bool | None:
         """List values of properties (with value mapping enabled)
 Usage: values [propRegex] [valueRegex]"""
+        global wp
+        global wpdef
         if not self._ensure_connected():
             return
         print(f"List values of properties (with value mapping):")
         props = self._get_props_matching_regex(arg)
         for pd, value in sorted(props.items()):
             print(
-                f"- {pd}: {mqtt_get_encoded_property(self.wpdef['properties'][pd],value)}")
+                f"- {pd}: {mqtt_get_encoded_property(wpdef['properties'][pd],value)}")
         print()
 
     def complete_values(self, text, line, begidx, endidx):
         return self._complete_values(text, line)
 
     def do_watch(self, arg: str) -> bool | None:
-        """Watch an event, a message or a property
-Usage: watch <event|message|property> <eventType|msgType|propName>"""
+        """Watch message or a property
+Usage: watch <message|property> <msgType|propName>"""
+        global wp
+        global wpdef
         args = arg.split(' ')
+        if not self._ensure_connected():
+            return
         if len(args) < 2 or arg == '':
             print(f"ERROR: Wrong number of arguments!")
-        elif args[0] == 'event' and args[1] not in [e.name for e in list(wattpilot.Event)]:
-            print(f"ERROR: Unknown event type: {args[1]}")
-        elif args[0] == 'event':
-            self.wp.add_event_handler(wattpilot.Event[args[1]], self._watched_event_received)
-        elif args[0] == 'message' and args[1] not in self.wpdef['messages']:
+        elif args[0] == 'message' and args[1] not in wpdef['messages']:
             print(f"ERROR: Unknown message type: {args[1]}")
         elif args[0] == 'message':
             msg_type = args[1]
             if len(self.watching_messages) == 0:
-                self.wp.add_event_handler(wattpilot.Event.WS_MESSAGE,self._watched_message_received)
+                wp.register_message_callback(self._watched_message_received)
             if msg_type not in self.watching_messages:
                 self.watching_messages.append(msg_type)
         elif args[0] == 'property' and args[1] not in wp.allProps:
@@ -605,18 +567,17 @@ Usage: watch <event|message|property> <eventType|msgType|propName>"""
         elif args[0] == 'property':
             prop_name = args[1]
             if len(self.watching_properties) == 0:
-                wp.add_event_handler(wattpilot.Event.WP_PROPERTY,self._watched_property_changed)
+                wp.register_property_callback(self._watched_property_changed)
             if prop_name not in self.watching_properties:
                 self.watching_properties.append(prop_name)
         else:
             print(f"ERROR: Unknown watch type: {args[0]}")
 
     def complete_watch(self, text, line, begidx, endidx):
+        global wpdef
         token = line.split(' ')
         if len(token) == 2:
-            return self._complete_list(['event', 'message', 'property'], text)
-        elif len(token) == 3 and token[1] == 'event':
-            return self._complete_list([e.name for e in list(wattpilot.Event)], text)
+            return self._complete_list(['message', 'property'], text)
         elif len(token) == 3 and token[1] == 'message':
             return self._complete_message(text, 'server')
         elif len(token) == 3 and token[1] == 'property':
@@ -624,6 +585,7 @@ Usage: watch <event|message|property> <eventType|msgType|propName>"""
         return []
 
     def _print_prop_info(self, pd, value):
+        global wp
         _LOGGER.debug(f"Property definition: {pd}")
         title = ""
         desc = ""
@@ -640,34 +602,34 @@ Usage: watch <event|message|property> <eventType|msgType|propName>"""
         print(f"- {pd['key']} ({pd['jsonType']}{alias}{rw}): {title}")
         if desc:
             print(f"  Description: {desc}")
-        if pd['key'] in self.wp.allProps.keys():
+        if pd['key'] in wp.allProps.keys():
             print(
                 f"  Value: {mqtt_get_encoded_property(pd,value)}{' (raw:' + utils_value2json(value) + ')' if 'valueMap' in pd else ''}")
         else:
             print(
                 f"  NOTE: This property is currently not provided by the connected device!")
 
-    def _watched_event_received(self, event, *args):
-        print(f"Event of type '{event['type']}' with args '{args}' received!")
-
-    def _watched_property_changed(self, wp, name, value):
+    def _watched_property_changed(self, name, value):
+        global wpdef
         if name in self.watching_properties:
-            pd = self.wpdef["properties"][name]
+            pd = wpdef["properties"][name]
             _LOGGER.info(
                 f"Property {name} changed to {mqtt_get_encoded_property(pd,value)}")
 
-    def _watched_message_received(self, event, message):
-        msg_dict = json.loads(message)
-        if msg_dict["type"] in self.watching_messages:
-            _LOGGER.info(f"Message of type {msg_dict['type']} received: {message}")
+    def _watched_message_received(self, wp, wsapp, msg, msg_json):
+        if msg.type in self.watching_messages:
+            _LOGGER.info(f"Message of type {msg.type} received: {msg}")
 
     def _ensure_connected(self):
-        if not self.wp or not self.wp._connected:
+        global wp
+        if not wp:
             print('Not connected to wattpilot!')
             return False
         return True
 
     def _get_props_matching_regex(self, arg, available_only=True):
+        global wp
+        global wpdef
         args = arg.split(' ')
         prop_regex = '.*'
         if len(args) > 0 and args[0] != '':
@@ -678,7 +640,7 @@ Usage: watch <event|message|property> <eventType|msgType|propName>"""
         if len(args) > 1:
             value_regex = args[1]
         props = {k: v for k, v in props.items() if re.match(r'^'+value_regex+'$',
-                                                            str(mqtt_get_encoded_property(self.wpdef["properties"][k], v)), flags=re.IGNORECASE)}
+                                                            str(mqtt_get_encoded_property(wpdef["properties"][k], v)), flags=re.IGNORECASE)}
         return props
 
 
@@ -750,11 +712,11 @@ def mqtt_get_decoded_property(pd, value):
 
 def mqtt_publish_property(wp, mqtt_client, pd, value, force_publish=False):
     prop_name = pd["key"]
-    if not (force_publish or not Cfg.MQTT_PROPERTIES.val or prop_name in Cfg.MQTT_PROPERTIES.val):
+    if not (force_publish or MQTT_PROPERTIES == [''] or prop_name in MQTT_PROPERTIES):
         _LOGGER.debug(f"Skipping publishing of property '{prop_name}' ...")
         return
-    property_topic = mqtt_subst_topic(Cfg.MQTT_TOPIC_PROPERTY_STATE.val, {
-        "baseTopic": Cfg.MQTT_TOPIC_BASE.val,
+    property_topic = mqtt_subst_topic(MQTT_TOPIC_PROPERTY_STATE, {
+        "baseTopic": MQTT_TOPIC_BASE,
         "serialNumber": wp.serial,
         "propName": prop_name,
     })
@@ -762,7 +724,7 @@ def mqtt_publish_property(wp, mqtt_client, pd, value, force_publish=False):
     _LOGGER.debug(
         f"Publishing property '{prop_name}' with value '{encoded_value}' to MQTT ...")
     mqtt_client.publish(property_topic, encoded_value, retain=True)
-    if Cfg.WATTPILOT_SPLIT_PROPERTIES.val and "childProps" in pd:
+    if WATTPILOT_SPLIT_PROPERTIES and "childProps" in pd:
         _LOGGER.debug(
             f"Splitting child props of property {prop_name} as {pd['jsonType']} for value {value} ...")
         for cpd in pd["childProps"]:
@@ -773,23 +735,25 @@ def mqtt_publish_property(wp, mqtt_client, pd, value, force_publish=False):
             mqtt_publish_property(wp, mqtt_client, cpd, split_value, True)
 
 
-def mqtt_publish_message(event, message):
-    _LOGGER.debug(f"""mqtt_publish_message(event={event},message={message})""")
+def mqtt_publish_message(wp, wsapp, msg, msg_json):
     global mqtt_client
+    global MQTT_PUBLISH_MESSAGES
+    global MQTT_TOPIC_BASE
+    global MQTT_PUBLISH_PROPERTIES
+    global MQTT_TOPIC_MESSAGES
     global wpdef
-    wp = event['wp']
     if mqtt_client == None:
         _LOGGER.debug(f"Skipping MQTT message publishing.")
         return
-    msg_dict = json.loads(message)
-    if Cfg.MQTT_PUBLISH_MESSAGES.val and (not Cfg.MQTT_MESSAGES.val or msg_dict["type"] in Cfg.MQTT_MESSAGES.val):
-        message_topic = mqtt_subst_topic(Cfg.MQTT_TOPIC_MESSAGES.val, {
-            "baseTopic": Cfg.MQTT_TOPIC_BASE.val,
+    msg_dict = json.loads(msg_json)
+    if MQTT_PUBLISH_MESSAGES == "true" and (MQTT_MESSAGES == [] or MQTT_MESSAGES == [''] or msg.type in MQTT_MESSAGES):
+        message_topic = mqtt_subst_topic(MQTT_TOPIC_MESSAGES, {
+            "baseTopic": MQTT_TOPIC_BASE,
             "serialNumber": wp.serial,
-            "messageType": msg_dict["type"],
+            "messageType": msg.type,
         })
-        mqtt_client.publish(message_topic, message)
-    if Cfg.MQTT_PUBLISH_PROPERTIES.val and msg_dict["type"] in ["fullStatus", "deltaStatus"]:
+        mqtt_client.publish(message_topic, msg_json)
+    if MQTT_PUBLISH_PROPERTIES == "true" and msg.type in ["fullStatus", "deltaStatus"]:
         for prop_name, value in msg_dict["status"].items():
             pd = wpdef["properties"][prop_name]
             mqtt_publish_property(wp, mqtt_client, pd, value)
@@ -799,22 +763,20 @@ def mqtt_publish_message(event, message):
 
 def mqtt_subst_topic(s, values, expand=True):
     if expand:
-        s = re.sub(r'^~', Cfg.MQTT_TOPIC_PROPERTY_BASE.val, s)
+        s = re.sub(r'^~', MQTT_TOPIC_PROPERTY_BASE, s)
     all_values = {
-        "baseTopic": Cfg.MQTT_TOPIC_BASE.val,
+        "baseTopic": MQTT_TOPIC_BASE,
     } | values
     return s.format(**all_values)
 
 
-def mqtt_setup_client(host, port, client_id, available_topic, command_topic, username="", password=""):
+def mqtt_setup_client(host, port, client_id, available_topic, command_topic):
     # Connect to MQTT server:
     mqtt_client = mqtt.Client(client_id)
     mqtt_client.on_message = mqtt_set_value
     _LOGGER.info(f"Connecting to MQTT host {host} on port {port} ...")
     mqtt_client.will_set(
         available_topic, payload="offline", qos=0, retain=True)
-    if username != "":
-        mqtt_client.username_pw_set(username, password)
     mqtt_client.connect(host, port)
     mqtt_client.loop_start()
     mqtt_client.publish(available_topic, payload="online", qos=0, retain=True)
@@ -824,20 +786,22 @@ def mqtt_setup_client(host, port, client_id, available_topic, command_topic, use
 
 
 def mqtt_setup(wp):
-    _LOGGER.debug(f"mqtt_setup(wp)")
-
+    global MQTT_CLIENT_ID
+    global MQTT_HOST
+    global MQTT_PORT
+    global MQTT_PROPERTIES
+    global MQTT_TOPIC_AVAILABLE
+    global MQTT_TOPIC_PROPERTY_SET
     # Connect to MQTT server:
-    mqtt_client = mqtt_setup_client(Cfg.MQTT_HOST.val, Cfg.MQTT_PORT.val, Cfg.MQTT_CLIENT_ID.val,
-                                    mqtt_subst_topic(Cfg.MQTT_TOPIC_AVAILABLE.val, {}),
-                                    mqtt_subst_topic(Cfg.MQTT_TOPIC_PROPERTY_SET.val, {
+    mqtt_client = mqtt_setup_client(MQTT_HOST, MQTT_PORT, MQTT_CLIENT_ID,
+                                    mqtt_subst_topic(MQTT_TOPIC_AVAILABLE, {}),
+                                    mqtt_subst_topic(MQTT_TOPIC_PROPERTY_SET, {
                                                      "propName": "+"}),
-                                    Cfg.MQTT_USERNAME.val,
-                                    Cfg.MQTT_PASSWORD.val,
                                     )
-    Cfg.MQTT_PROPERTIES.val = mqtt_get_watched_properties(wp)
+    MQTT_PROPERTIES = mqtt_get_watched_properties(wp)
     _LOGGER.info(
-        f"Registering message callback to publish updates to the following properties to MQTT: {Cfg.MQTT_PROPERTIES.val}")
-    wp.add_event_handler(wattpilot.Event.WS_MESSAGE, mqtt_publish_message)
+        f"Registering message callback to publish updates to the following properties to MQTT: {MQTT_PROPERTIES}")
+    wp.register_message_callback(mqtt_publish_message)
     return mqtt_client
 
 
@@ -852,27 +816,26 @@ def mqtt_stop(mqtt_client):
 def mqtt_set_value(client, userdata, message):
     global wpdef
     topic_regex = mqtt_subst_topic(
-        Cfg.MQTT_TOPIC_PROPERTY_SET.val, {"propName": "([^/]+)"})
+        MQTT_TOPIC_PROPERTY_SET, {"propName": "([^/]+)"})
     name = re.sub(topic_regex, r'\1', message.topic)
     if not name or name == "" or not wpdef["properties"][name]:
         _LOGGER.warning(f"Unknown property '{name}'!")
     pd = wpdef["properties"][name]
     if pd['rw'] == "R":
         _LOGGER.warning(f"Property '{name}' is not writable!")
-    try:
-        value = int(mqtt_get_decoded_property(pd, str(message.payload.decode("utf-8"))))
-    except ValueError:
-        value = mqtt_get_decoded_property(pd, str(message.payload.decode("utf-8")))
+    value = mqtt_get_decoded_property(
+        pd, str(message.payload.decode("utf-8")))
     _LOGGER.info(
         f"MQTT Message received: topic={message.topic}, name={name}, value={value}")
     wp.send_update(name, value)
 
 
 def mqtt_get_watched_properties(wp):
-    if not Cfg.MQTT_PROPERTIES.val:
+    global MQTT_PROPERTIES
+    if MQTT_PROPERTIES == [] or MQTT_PROPERTIES == ['']:
         return list(wp.allProps.keys())
     else:
-        return Cfg.MQTT_PROPERTIES.val
+        return MQTT_PROPERTIES
 
 
 #### Home Assistant Functions ####
@@ -942,6 +905,11 @@ def ha_get_template_filter_from_json_type(json_type):
 
 
 def ha_discover_property(wp, mqtt_client, pd, disable_discovery=False, force_enablement=None):
+    global HA_TOPIC_CONFIG
+    global WATTPILOT_SPLIT_PROPERTIES
+    global MQTT_TOPIC_PROPERTY_BASE
+    global MQTT_TOPIC_PROPERTY_SET
+    global MQTT_TOPIC_PROPERTY_STATE
     name = pd["key"]
     ha_info = {}
     if "homeAssistant" in pd:
@@ -965,14 +933,14 @@ def ha_discover_property(wp, mqtt_client, pd, disable_discovery=False, force_ena
     }
     ha_device = ha_get_device_info(wp)
     base_topic = mqtt_subst_topic(
-        Cfg.MQTT_TOPIC_PROPERTY_BASE.val, topic_subst_map, False)
+        MQTT_TOPIC_PROPERTY_BASE, topic_subst_map, False)
     ha_discovery_config = ha_get_default_config_for_prop(pd) | {
         "~": base_topic,
         "name": title,
         "object_id": object_id,
         "unique_id": unique_id,
-        "state_topic": mqtt_subst_topic(Cfg.MQTT_TOPIC_PROPERTY_STATE.val, topic_subst_map, False),
-        "availability_topic": mqtt_subst_topic(Cfg.MQTT_TOPIC_AVAILABLE.val, {}),
+        "state_topic": mqtt_subst_topic(MQTT_TOPIC_PROPERTY_STATE, topic_subst_map, False),
+        "availability_topic": mqtt_subst_topic(MQTT_TOPIC_AVAILABLE, {}),
         "payload_available": "online",
         "payload_not_available": "offline",
         "device": ha_device,
@@ -981,14 +949,14 @@ def ha_discover_property(wp, mqtt_client, pd, disable_discovery=False, force_ena
         ha_discovery_config["options"] = list(pd["valueMap"].values())
     if pd.get("rw", "") == "R/W":
         ha_discovery_config["command_topic"] = mqtt_subst_topic(
-            Cfg.MQTT_TOPIC_PROPERTY_SET.val, topic_subst_map, False)
+            MQTT_TOPIC_PROPERTY_SET, topic_subst_map, False)
     ha_discovery_config = dict(
         list(ha_discovery_config.items())
         + list(ha_config.items())
     )
     if force_enablement != None:
         ha_discovery_config["enabled_by_default"] = force_enablement
-    topic_cfg = mqtt_subst_topic(Cfg.HA_TOPIC_CONFIG.val, topic_subst_map)
+    topic_cfg = mqtt_subst_topic(HA_TOPIC_CONFIG, topic_subst_map)
     if disable_discovery:
         payload = ''
     else:
@@ -1001,27 +969,29 @@ def ha_discover_property(wp, mqtt_client, pd, disable_discovery=False, force_ena
         if payload != "":
             del ha_discovery_config["command_topic"]
             payload = utils_value2json(ha_discovery_config)
-        mqtt_client.publish(mqtt_subst_topic(Cfg.HA_TOPIC_CONFIG.val, topic_subst_map | {
+        mqtt_client.publish(mqtt_subst_topic(HA_TOPIC_CONFIG, topic_subst_map | {
                             "component": "sensor"}), payload, retain=True)
-    if Cfg.WATTPILOT_SPLIT_PROPERTIES.val and "childProps" in pd:
+    if WATTPILOT_SPLIT_PROPERTIES and "childProps" in pd:
         for p in pd["childProps"]:
             ha_discover_property(wp, mqtt_client, p,
                                  disable_discovery, force_enablement)
 
 
 def ha_is_default_prop(pd):
+    global HA_DISABLED_ENTITIES
     v = "homeAssistant" in pd
-    if not Cfg.HA_DISABLED_ENTITIES.val:
+    if HA_DISABLED_ENTITIES != 'true':
         ha = pd.get("homeAssistant", {}) if pd.get("homeAssistant", {}) else {}
         v = v and ha.get("config", {}).get("enabled_by_default", True)
     return v
 
 
 def ha_get_discovery_properties():
+    global HA_PROPERTIES
     global wpdef
     _LOGGER.debug(
-        f"get_ha_discovery_properties(): HA_PROPERTIES='{Cfg.HA_PROPERTIES.val}', propdef size='{len(wpdef['properties'])}'")
-    ha_properties = Cfg.HA_PROPERTIES.val
+        f"get_ha_discovery_properties(): HA_PROPERTIES='{HA_PROPERTIES}', propdef size='{len(wpdef['properties'])}'")
+    ha_properties = HA_PROPERTIES
     if ha_properties == [''] or ha_properties == []:
         ha_properties = [p["key"]
                          for p in wpdef["properties"].values() if ha_is_default_prop(p)]
@@ -1040,10 +1010,11 @@ def ha_discover_properties(mqtt_client, ha_properties, disable_discovery=True):
 
 
 def ha_publish_initial_properties(wp, mqtt_client):
+    global HA_PROPERTIES
     global wpdef
     _LOGGER.info(
         f"Publishing all initial property values to MQTT to populate the entity values ...")
-    for prop_name in Cfg.HA_PROPERTIES.val:
+    for prop_name in HA_PROPERTIES:
         if prop_name in wp.allProps:
             value = wp.allProps[prop_name]
             pd = wpdef["properties"][prop_name]
@@ -1051,18 +1022,22 @@ def ha_publish_initial_properties(wp, mqtt_client):
 
 
 def ha_setup(wp):
+    global HA_PROPERTIES
+    global HA_WAIT_INIT_S
+    global HA_WAIT_PROPS_MS
+    global MQTT_PROPERTIES
     global wpdef
     # Configure list of relevant properties:
-    Cfg.HA_PROPERTIES.val = ha_get_discovery_properties()
-    if Cfg.MQTT_PROPERTIES.val == [] or Cfg.MQTT_PROPERTIES.val == ['']:
-        Cfg.MQTT_PROPERTIES.val = Cfg.HA_PROPERTIES.val
+    HA_PROPERTIES = ha_get_discovery_properties()
+    if MQTT_PROPERTIES == [] or MQTT_PROPERTIES == ['']:
+        MQTT_PROPERTIES = HA_PROPERTIES
     # Setup MQTT client:
     mqtt_client = mqtt_setup(wp)
     # Publish HA discovery config:
-    ha_discover_properties(mqtt_client, Cfg.HA_PROPERTIES.val, False)
+    ha_discover_properties(mqtt_client, HA_PROPERTIES, False)
     # Wait a bit for HA to catch up:
     wait_time = math.ceil(
-        Cfg.HA_WAIT_INIT_S.val + len(Cfg.HA_PROPERTIES.val)*Cfg.HA_WAIT_PROPS_MS.val*0.001)
+        HA_WAIT_INIT_S + len(HA_PROPERTIES)*HA_WAIT_PROPS_MS*0.001)
     if wait_time > 0:
         _LOGGER.info(
             f"Waiting {wait_time}s to allow Home Assistant to discovery entities and subscribe MQTT topics before publishing initial values ...")
@@ -1074,132 +1049,119 @@ def ha_setup(wp):
 
 
 def ha_stop(mqtt_client):
-    ha_discover_properties(mqtt_client, Cfg.HA_PROPERTIES.val, True)
+    global HA_PROPERTIES
+    ha_discover_properties(mqtt_client, HA_PROPERTIES, True)
     mqtt_stop(mqtt_client)
-
-class Env():
-    def __init__(self, datatype, default, description, name="", val="", required=False, requiredIf=None):
-        self.datatype = datatype
-        self.default = default
-        self.description = description
-        self.name = name
-        self.val = val
-        self.required = required
-        self.requiredIf = requiredIf
-    def format(self):
-        val = self.val
-        if self.datatype == "password" and self.val != "":
-            val = "********"
-        return f"{self.name}={val}"
-
-
-# Wattpilot Configuration
-class Cfg(Enum):
-    HA_DISABLED_ENTITIES = Env("boolean", "false", "Create disabled entities in Home Assistant")
-    HA_ENABLED = Env("boolean", "false", "Enable Home Assistant Discovery")
-    HA_PROPERTIES = Env("list", "", "List of space-separated properties that should be discovered by Home Assistant (leave unset for all properties having `homeAssistant` set in [wattpilot.yaml](src/wattpilot/ressources/wattpilot.yaml)")
-    HA_TOPIC_CONFIG = Env("string", "homeassistant/{component}/{uniqueId}/config", "Topic pattern for HA discovery config")
-    HA_WAIT_INIT_S = Env("integer", "0", "Wait initial number of seconds after starting discovery (in addition to wait time depending on the number of properties). May be increased, if entities in HA are not populated with values.")
-    HA_WAIT_PROPS_MS = Env("integer", "0", "Wait milliseconds per property after discovery before publishing property values. May be increased, if entities in HA are not populated with values.")
-    MQTT_AVAILABLE_PAYLOAD = Env("string", "online", "Payload for the availability topic in case the MQTT bridge is online")
-    MQTT_CLIENT_ID = Env("string", "wattpilot2mqtt", "MQTT client ID")
-    MQTT_ENABLED = Env("boolean", "false", "Enable MQTT")
-    MQTT_HOST = Env("string", "", "MQTT host to connect to", requiredIf='MQTT_ENABLED')
-    MQTT_MESSAGES = Env("list", "", "List of space-separated message types to be published to MQTT (leave unset for all messages)")
-    MQTT_NOT_AVAILABLE_PAYLOAD = Env("string", "offline", "Payload for the availability topic in case the MQTT bridge is offline (last will message)")
-    MQTT_PASSWORD = Env("password", "", "Password for connecting to MQTT")
-    MQTT_PORT = Env("integer", "1883", "Port of the MQTT host to connect to")
-    MQTT_PROPERTIES = Env("list", "", "List of space-separated property names to publish changes for (leave unset for all properties)")
-    MQTT_PUBLISH_MESSAGES = Env("boolean", "false", "Publish received Wattpilot messages to MQTT")
-    MQTT_PUBLISH_PROPERTIES = Env("boolean", "true", "Publish received property values to MQTT")
-    MQTT_TOPIC_AVAILABLE = Env("string", "{baseTopic}/available", "Topic pattern to publish Wattpilot availability status to")
-    MQTT_TOPIC_BASE = Env("string", "wattpilot", "Base topic for MQTT")
-    MQTT_TOPIC_MESSAGES = Env("string", "{baseTopic}/messages/{messageType}", "Topic pattern to publish Wattpilot messages to")
-    MQTT_TOPIC_PROPERTY_BASE = Env("string", "{baseTopic}/properties/{propName}", "Base topic for properties")
-    MQTT_TOPIC_PROPERTY_SET = Env("string", "~/set", "Topic pattern to listen for property value changes for")
-    MQTT_TOPIC_PROPERTY_STATE = Env("string", "~/state", "Topic pattern to publish property values to")
-    MQTT_USERNAME = Env("string", "", "Username for connecting to MQTT")
-    WATTPILOT_AUTOCONNECT = Env("boolean", "true", "Automatically connect to Wattpilot on startup")
-    WATTPILOT_AUTO_RECONNECT = Env("boolean", "true", "Automatically re-connect to Wattpilot on lost connections")
-    WATTPILOT_CONNECT_TIMEOUT = Env("integer", "30", "Connect timeout for Wattpilot connection")
-    WATTPILOT_HOST = Env("string", "", "IP address of the Wattpilot device to connect to", required=True)
-    WATTPILOT_INIT_TIMEOUT = Env("integer", "30", "Wait timeout for property initialization")
-    WATTPILOT_LOGLEVEL = Env("string", "INFO", "Log level (CRITICAL,ERROR,WARNING,INFO,DEBUG)")
-    WATTPILOT_PASSWORD = Env("password", "", "Password for connecting to the Wattpilot device", required=True)
-    WATTPILOT_RECONNECT_INTERVAL = Env("integer", "30", "Waiting time in seconds before a lost connection is re-connected")
-    WATTPILOT_SPLIT_PROPERTIES = Env("boolean", "true", "Whether compound properties (e.g. JSON arrays or objects) should be decomposed into separate properties")
-
-    @classmethod
-    def set(cls, env: dict):
-        for var in list(cls):
-            #print(f"Setting parameter {var.name} ...")
-            d = var.value
-            d.name = var.name
-            strval = env.get(var.name, d.default)
-            if d.datatype == "boolean":
-                d.val = (strval == "true")
-            elif d.datatype == "integer":
-                d.val = int(strval)
-            elif d.datatype == "list":
-                d.val = strval.split(sep=' ') if strval else []
-            elif d.datatype == "password":
-                d.val = strval
-                if strval != "":
-                    strval = "********"
-            elif d.datatype == "string":
-                d.val = strval
-            _LOGGER.debug(f"{d.format()} (from '{strval}')")
-            assert not d.required or d.val, f"{var.name} is not set!"
-        for var in [e for e in list(cls) if e.value.requiredIf]:
-            d = var.value
-            assert not Cfg[d.requiredIf].value.val or d.val, f"{var.name} is not set (required for '{d.requiredIf}')!"
-
-    @classmethod
-    def docs_markdown(cls):
-        print("|" + "|".join(["Environment Variable", "Type", "Default Value", "Description"]) + "|")
-        print("|" + "|".join(["--------------------", "----", "-------------", "-----------"]) + "|")
-        for e in list(cls):
-            d = e.value
-            print("|" + "|".join([f"`{e.name}`", f"`{d.datatype}`", f"{'`'+d.default+'`' if d.default else ''}", d.description]) + "|")
-
-    @property
-    def val(self):
-        return self.value.val
-
-    @val.setter
-    def val(self,value):
-        self.value.val = value
 
 
 #### Main Program ####
 
+def main_setup_env():
+    global HA_DISABLED_ENTITIES
+    global HA_ENABLED
+    global HA_PROPERTIES
+    global HA_TOPIC_CONFIG
+    global HA_WAIT_INIT_S
+    global HA_WAIT_PROPS_MS
+    global MQTT_AVAILABLE_PAYLOAD
+    global MQTT_CLIENT_ID
+    global MQTT_ENABLED
+    global MQTT_HOST
+    global MQTT_MESSAGES
+    global MQTT_NOT_AVAILABLE_PAYLOAD
+    global MQTT_PORT
+    global MQTT_PROPERTIES
+    global MQTT_PUBLISH_MESSAGES
+    global MQTT_PUBLISH_PROPERTIES
+    global MQTT_TOPIC_AVAILABLE
+    global MQTT_TOPIC_BASE
+    global MQTT_TOPIC_MESSAGES
+    global MQTT_TOPIC_PROPERTY_BASE
+    global MQTT_TOPIC_PROPERTY_SET
+    global MQTT_TOPIC_PROPERTY_STATE
+    global WATTPILOT_AUTOCONNECT
+    global WATTPILOT_CONNECT_TIMEOUT
+    global WATTPILOT_DEBUG_LEVEL
+    global WATTPILOT_HOST
+    global WATTPILOT_INIT_TIMEOUT
+    global WATTPILOT_PASSWORD
+    global WATTPILOT_SPLIT_PROPERTIES
+    HA_DISABLED_ENTITIES = os.environ.get('HA_DISABLED_ENTITIES', 'false')
+    HA_ENABLED = os.environ.get('HA_ENABLED', 'false')
+    HA_PROPERTIES = os.environ.get('HA_PROPERTIES', '').split(sep=' ')
+    HA_TOPIC_CONFIG = os.environ.get(
+        'HA_TOPIC_CONFIG', 'homeassistant/{component}/{uniqueId}/config')
+    HA_WAIT_INIT_S = int(os.environ.get('HA_WAIT_INIT_S', '0'))
+    HA_WAIT_PROPS_MS = int(os.environ.get('HA_WAIT_PROPS_MS', '0'))
+    MQTT_AVAILABLE_PAYLOAD = os.environ.get('MQTT_AVAILABLE_PAYLOAD', 'online')
+    MQTT_CLIENT_ID = os.environ.get('MQTT_CLIENT_ID', 'wattpilot2mqtt')
+    MQTT_ENABLED = os.environ.get('MQTT_ENABLED', 'false')
+    MQTT_HOST = os.environ.get('MQTT_HOST', '')
+    MQTT_MESSAGES = os.environ.get('MQTT_MESSAGES', '').split(sep=' ')
+    MQTT_NOT_AVAILABLE_PAYLOAD = os.environ.get(
+        'MQTT_NOT_AVAILABLE_PAYLOAD', 'offline')
+    MQTT_PORT = int(os.environ.get('MQTT_PORT', '1883'))
+    MQTT_PROPERTIES = os.environ.get('MQTT_PROPERTIES', '').split(sep=' ')
+    MQTT_PUBLISH_MESSAGES = os.environ.get('MQTT_PUBLISH_MESSAGES', 'false')
+    MQTT_PUBLISH_PROPERTIES = os.environ.get('MQTT_PUBLISH_PROPERTIES', 'true')
+    MQTT_TOPIC_AVAILABLE = os.environ.get(
+        'MQTT_TOPIC_AVAILABLE', '{baseTopic}/available')
+    MQTT_TOPIC_BASE = os.environ.get('MQTT_TOPIC_BASE', 'wattpilot')
+    MQTT_TOPIC_MESSAGES = os.environ.get(
+        'MQTT_TOPIC_MESSAGES', '{baseTopic}/messages/{messageType}')
+    MQTT_TOPIC_PROPERTY_BASE = os.environ.get(
+        'MQTT_TOPIC_PROPERTY_BASE', '{baseTopic}/properties/{propName}')
+    MQTT_TOPIC_PROPERTY_SET = os.environ.get(
+        'MQTT_TOPIC_PROPERTY_SET', '~/set')
+    MQTT_TOPIC_PROPERTY_STATE = os.environ.get(
+        'MQTT_TOPIC_PROPERTY_STATE', '~/state')
+    WATTPILOT_AUTOCONNECT = os.environ.get('WATTPILOT_AUTOCONNECT', 'true')
+    WATTPILOT_CONNECT_TIMEOUT = int(
+        os.environ.get('WATTPILOT_CONNECT_TIMEOUT', '30'))
+    WATTPILOT_DEBUG_LEVEL = os.environ.get('WATTPILOT_DEBUG_LEVEL', 'INFO')
+    WATTPILOT_HOST = os.environ.get('WATTPILOT_HOST', '')
+    WATTPILOT_INIT_TIMEOUT = int(
+        os.environ.get('WATTPILOT_INIT_TIMEOUT', '30'))
+    WATTPILOT_PASSWORD = os.environ.get('WATTPILOT_PASSWORD', '')
+    WATTPILOT_SPLIT_PROPERTIES = bool(
+        os.environ.get('WATTPILOT_SPLIT_PROPERTIES', 'true'))
+
+    # Ensure wattpilot host an password are set:
+    assert WATTPILOT_HOST != '', "WATTPILOT_HOST not set!"
+    assert WATTPILOT_PASSWORD != '', "WATTPILOT_PASSWORD not set!"
+    assert MQTT_ENABLED == 'false' or MQTT_HOST != '', 'MQTT_HOST not set!'
+
+
 def main():
+    global MQTT_ENABLED
+    global WATTPILOT_AUTOCONNECT
+    global WATTPILOT_DEBUG_LEVEL
     global mqtt_client
     global wp
     global wpdef
 
-    # Set debug level:
-    logging.basicConfig(level=os.environ.get('WATTPILOT_LOGLEVEL','INFO').upper())
-
     # Setup environment variables:
-    Cfg.set(os.environ)
+    main_setup_env()
+
+    # Set debug level:
+    logging.basicConfig(level=WATTPILOT_DEBUG_LEVEL)
 
     # Initialize globals:
     mqtt_client = None
-    wp = wp_initialize(Cfg.WATTPILOT_HOST.val, Cfg.WATTPILOT_PASSWORD.val)
-    wpdef = wp_read_apidef() # TODO: Should be part of the wattpilot core library!
+    wp = None
+    wpdef = wp_read_apidef()
 
     # Initialize shell:
-    wpsh = WattpilotShell(wp, wpdef)
-    if Cfg.WATTPILOT_AUTOCONNECT.val:
+    wpsh = WattpilotShell()
+    if WATTPILOT_AUTOCONNECT == 'true':
         _LOGGER.info("Automatically connecting to Wattpilot ...")
-        wpsh.do_connect("")
+        wpsh.onecmd('connect')
         # Enable MQTT and/or HA integration:
-        if Cfg.MQTT_ENABLED.val and not Cfg.HA_ENABLED.val:
-            wpsh.do_mqtt("start")
-        elif Cfg.MQTT_ENABLED.val and Cfg.HA_ENABLED.val:
-            wpsh.do_ha("start")
-        wpsh.do_info("")
+        if MQTT_ENABLED == "true" and HA_ENABLED == "false":
+            wpsh.onecmd('mqtt start')
+        elif MQTT_ENABLED == "true" and HA_ENABLED == "true":
+            wpsh.onecmd('ha start')
+        wpsh.onecmd('info')
     if len(sys.argv) < 2:
         wpsh.cmdloop()
     else:

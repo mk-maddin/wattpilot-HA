@@ -8,7 +8,6 @@ import logging
 import base64
 import bcrypt
 
-from enum import Enum, auto
 from time import sleep
 from types import SimpleNamespace
 
@@ -17,8 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 CONST_HASH_PBKDF2 = 'pbkdf2'
 CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
-__version__ = '0.2.2a'
-
+__version__ = '0.2.2b'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -27,31 +25,8 @@ class LoadMode():
     NEXTTRIP=5
 
 
-class Event(Enum):
-    # Wattpilot events:
-    WP_AUTH = auto(),
-    WP_AUTH_ERROR = auto(),
-    WP_AUTH_SUCCESS = auto(),
-    WP_CLEAR_INVERTERS = auto(),
-    WP_CONNECT = auto(),
-    WP_DELTA_STATUS = auto(),
-    WP_DISCONNECT = auto(),
-    WP_FULL_STATUS = auto(),
-    WP_FULL_STATUS_FINISHED = auto(),
-    WP_HELLO = auto(),
-    WP_INIT = auto(),
-    WP_PROPERTY = auto(),
-    WP_RESPONSE = auto(),
-    WP_UPDATE_INVERTER = auto(),
-    # WebSocketApp events:
-    WS_CLOSE = auto(),
-    WS_ERROR = auto(),
-    WS_MESSAGE = auto(),
-    WS_OPEN = auto(),
-
-
 class Wattpilot(object):
-    
+
     carValues = {}
     alwValues = {}
     astValues = {}
@@ -314,44 +289,22 @@ class Wattpilot(object):
         self._wst = threading.Thread(target=self._wsapp.run_forever)
         self._wst.daemon = True
         self._wst.start()
-        self.__call_event_handler(Event.WP_CONNECT)
+        
         _LOGGER.info("Wattpilot connected")
 
-    def disconnect(self, auto_reconnect=False):
-        self._wsapp.close()
-        self._connected=False
-        self._auto_reconnect = auto_reconnect
-        self.__call_event_handler(Event.WP_DISCONNECT)
-        _LOGGER.info("Wattpilot disconnected")
+    def register_message_callback(self,callback_fn):
+        """signature of callback_fn: (wsapp,msg)"""
+        self._message_callback = callback_fn
 
-    # Wattpilot Event Handling
+    def unregister_message_callback(self):
+        self._message_callback = None
 
-    # def __init_event_handler():
-    #     eh = {}
-    #     for event_type in list(Event):
-    #         eh[event_type.value] = []
-    #     return eh
+    def register_property_callback(self,callback_fn):
+        """signature of callback_fn: (name,value)"""
+        self._property_callback = callback_fn
 
-    def add_event_handler(self,event_type,callback_fn):
-        if event_type not in self._event_handler:
-            self._event_handler[event_type] = []
-        self._event_handler[event_type].append(callback_fn)
-
-    def remove_event_handler(self,event_type,callback_fn):
-        if event_type in self._event_handler and callback_fn in self._event_handler[event_type]:
-            self._event_handler[event_type].remove(callback_fn)
-
-    def __call_event_handler(self, event_type, *args):
-        _LOGGER.debug(f"Calling event handler for event type '{event_type} ...")
-        if event_type not in self._event_handler:
-            return
-        for callback_fn in self._event_handler[event_type]:
-            event = {
-                "type": event_type,
-                "wp": self,
-            }
-            callback_fn(event,*args)
-
+    def unregister_property_callback(self):
+        self._property_callback = None
 
     def set_power(self,power):
         self.send_update("amp",power)
@@ -367,34 +320,6 @@ class Wattpilot(object):
         message["requestId"]=self.__requestid
         message["key"]=name
         message["value"]=value
-        if (self._secured is not None):
-            if  (self._secured > 0):
-                self.__send(message,True)
-            else:
-                self.__send(message)
-        else:
-            self.__send(message)
-
-    def unpairInverter(self,InverterID):
-        message = {}
-        message["type"]="unpairInverter"
-        self.__requestid = self.__requestid+1
-        message["requestId"]=self.__requestid
-        message["inverterId"]=InverterID
-        if (self._secured is not None):
-            if  (self._secured > 0):
-                self.__send(message,True)
-            else:
-                self.__send(message)
-        else:
-            self.__send(message)
-
-    def pairInverter(self,InverterID):
-        message = {}
-        message["type"]="pairInverter"
-        self.__requestid = self.__requestid+1
-        message["requestId"]=self.__requestid
-        message["inverterId"]=InverterID
         if (self._secured is not None):
             if  (self._secured > 0):
                 self.__send(message,True)
@@ -468,7 +393,8 @@ class Wattpilot(object):
                 self._updateAvailable = False
             else:
                 self._updateAvailable = True
-        self.__call_event_handler(Event.WP_PROPERTY, name, value)
+        if self._property_callback != None:
+            self._property_callback(name,value)
 
     def __on_hello(self,message):
         _LOGGER.info("Connected to WattPilot Serial %s",message.serial)
@@ -484,7 +410,6 @@ class Wattpilot(object):
         self._protocol=message.protocol
         if hasattr(message,"secured"):
             self._secured=message.secured
-        self.__call_event_handler(Event.WP_HELLO, message)
 
     def __on_auth(self,wsapp,message):
         ran = random.randrange(10**80)
@@ -501,8 +426,8 @@ class Wattpilot(object):
         response["type"] = "auth"
         response["token3"] = self._token3
         response["hash"] = hash
+
         self.__send(response)
-        self.__call_event_handler(Event.WP_AUTH, message)
 
     def __update_hashedpassword(self,password=None,serial=None):
         if password is None:
@@ -608,82 +533,63 @@ class Wattpilot(object):
 
     def __on_AuthSuccess(self,message):
         self._connected = True
-        self.__call_event_handler(Event.WP_AUTH_SUCCESS, message)
         _LOGGER.info("Authentication successful")
 
     def __on_FullStatus(self,message):
         props = message.status.__dict__
         for key in props:
             self.__update_property(key,props[key])
-        self.__call_event_handler(Event.WP_FULL_STATUS, message)
-        if hasattr(message,'partial'):
-            self._allPropsInitialized = not message.partial
-            if message.partial == False:
-                self.__call_event_handler(Event.WP_FULL_STATUS_FINISHED, message)
-        else:
-            self.__allPropsInitializedFallback=True
 
     def __on_AuthError(self,message):
         if message.message=="Wrong password":
             self._wsapp.close()
-            _LOGGER.error("Authentication failed: %s", message.message)
-        self.__call_event_handler(Event.WP_AUTH_ERROR, message)
+            _LOGGER.error("Authentication failed: %s" , message.message)
 
     def __on_DeltaStatus(self,message):
+        self._allPropsInitialized=True # Assume all properties have been initialized when first delta status is received
         props = message.status.__dict__
         for key in props:
             self.__update_property(key,props[key])
-        self.__call_event_handler(Event.WP_DELTA_STATUS, message)
-        if self.__allPropsInitializedFallback and not self._allPropsInitialized:
-            self._allPropsInitialized = True
-            self.__call_event_handler(Event.WP_FULL_STATUS_FINISHED, message)
+
 
     def __on_clearInverters(self,message):
-        self.__call_event_handler(Event.WP_CLEAR_INVERTERS, message)
+        pass
 
     def __on_updateInverter(self,message):
-        self.__call_event_handler(Event.WP_UPDATE_INVERTER, message)
+        pass
 
     def __on_response(self,message):
         if message.success:
-            if hasattr(message,"status"):
-                props = message.status.__dict__
-                for key in props:
-                    self.__update_property(key,props[key])
+            props = message.status.__dict__
+            for key in props:
+                self.__update_property(key,props[key])
         else:
             _LOGGER.error("Error Sending Request %s. Message: %s" ,message.requestId,message.message)
-        self.__call_event_handler(Event.WP_RESPONSE, message)
-
-    def __on_open(self,wsapp):
-        self.__call_event_handler(Event.WS_OPEN, wsapp)
 
     def __on_error(self,wsapp,err):
-        self.__call_event_handler(Event.WS_ERROR, wsapp, err)
-        _LOGGER.error(f"Error received from WebSocketApp: {err}")
+        self._wsapp.close()
+        self._connected=False
+        sleep(30)
+        self._wsapp.run_forever()
 
     def __on_close(self,wsapp,code,msg):
         self._connected=False
-        self.__call_event_handler(Event.WS_CLOSE, wsapp, code, msg)
-        if (self._auto_reconnect):
-            sleep(self._reconnect_interval)
-            self._wsapp.run_forever()
 
     def __on_message(self, wsapp, message):
         ## called whenever a message through websocket is received
         _LOGGER.debug("Message received: %s", message)
         msg=json.loads(message, object_hook=lambda d: SimpleNamespace(**d))
-        self.__call_event_handler(Event.WS_MESSAGE, message)
         if (msg.type == 'hello'):  # Hello Message -> Received upon connection before auth
             self.__on_hello(msg)
         if (msg.type == 'authRequired'): # Auth Required -> Received after hello 
             self.__on_auth(wsapp,msg)
         if (msg.type == 'response'): # Response Message -> Received after sending a update and contains result of update
             self.__on_response(msg)
-        if (msg.type == 'authSuccess'): # Auth Success -> Received after sending correct authentication message
+        if (msg.type == 'authSuccess'): #Auth Success -> Received after sending  correct authentication message
             self.__on_AuthSuccess(msg)
-        if (msg.type == 'authError'): # Auth Error -> Received after sending incorrect authentication message (e.g. wrong password)
+        if (msg.type == 'authError'): # AUth errot -> Received after sending incorrect authentication message (e.g. wrong password)
             self.__on_AuthError(msg)
-        if (msg.type == 'fullStatus'): # Full Status -> Received after successful connection. Contains all properties of Wattpilot
+        if (msg.type == 'fullStatus'): #Full Status -> Received after successfull connection. Contains all Properties of Wattpilot
             self.__on_FullStatus(msg)
         if (msg.type == 'deltaStatus'): # Delta Status -> Whenever a property changes a Delta Status is send
             self.__on_DeltaStatus(msg)
@@ -691,12 +597,14 @@ class Wattpilot(object):
             self.__on_clearInverters(msg)
         if (msg.type == 'updateInverter'): # Contains information of connected Photovoltaik inverter / powermeter
             self.__on_updateInverter(msg)
+        if self._message_callback != None:
+            self._message_callback(self,wsapp,msg,message)
+
 
     def __init__(self, ip ,password,serial=None,cloud=False):
-        self._auto_reconnect = True
-        self._reconnect_interval = 30
-        self._websocket_default_timeout = 10
-        self.__requestid = 0
+        RECONNECTINTERVALL = 30
+
+        self.__requestid=0
         self._name = None
         self._hostname = None
         self._friendlyName = None
@@ -717,7 +625,6 @@ class Wattpilot(object):
         self._connected = False
         self._allProps={}
         self._allPropsInitialized=False
-        self.__allPropsInitializedFallback=False
         self._voltage1=None
         self._voltage2=None
         self._voltage3=None
@@ -740,18 +647,12 @@ class Wattpilot(object):
         self._carConnected=None
         self._cae=None
         self._cak=None
-        self._event_handler = {}
+        self._message_callback=None
+        self._property_callback=None
 
         self._wst=threading.Thread()
 
-        websocket.setdefaulttimeout(self._websocket_default_timeout)
-        self._wsapp = websocket.WebSocketApp(
-            self.url,
-            on_close=self.__on_close,
-            on_error=self.__on_error,
-            on_message=self.__on_message,
-            on_open=self.__on_open,
-        )
-        self.__call_event_handler(Event.WP_INIT)
-        _LOGGER.info ("Wattpilot %s initialized",self.serial)
+        websocket.setdefaulttimeout(10)
+        self._wsapp = websocket.WebSocketApp(self.url, on_message=self.__on_message, on_error=self.__on_error, on_close=self.__on_close)
+        _LOGGER.info ("Wattpilot %s initilized",self.serial)
 

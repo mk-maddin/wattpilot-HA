@@ -4,6 +4,6 @@ requires = [
     "setuptools>=42",
     "wheel",
     "paho-mqtt",
-    "cmd2>=2.4.1",
+    "bcrypt>=5.0.0"
 ]
 build-backend = "setuptools.build_meta"

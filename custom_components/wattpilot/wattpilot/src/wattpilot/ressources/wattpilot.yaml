@@ -451,31 +451,14 @@ properties:
       config:
         entity_category: config
   - key: bam
-    alias: buttonAllowMode
-    title: Button Allow mode change
     jsonType: boolean
     example: true
-    rw: R/W
-    type: bool
-    category: Status
-    description: Allow mode change via hardware button on Wattpilot
-    homeAssistant:
   - key: cae
-    alias: cloudApiEnable
-    title: Cloud API Enable
-    description: Set to true, if you want to use the go-eCharger API at https://<serial number>.api.v3.go-e.io/api.
     jsonType: boolean
     example: false
-    rw: R/W
-    type: bool
   - key: cak
-    alias: cloudApiKey
-    title: Cloud API Key
-    description: Contains the access token (32 characters) for the cloud API. Whenever you write anything to cak a new token is generated automatically.
     jsonType: string
-    example: "Cjk4BWbH8EcTFtY6dsWvTYz6CjBxifeO"
-    rw: R/W
-    type: string
+    example: ""
   - key: car
     alias: carState
     title: Car State
@@ -1124,13 +1107,8 @@ properties:
     example: 20
     description: Battery limit for PV surplus charging
   - key: fap
-    alias: froniusAllowPause
-    title: Fronius Allow Pause
-    description: Normally true. Set to false if your car disconnects when a charging pause occurs. Only VW ID.3/ID.4 seem to require this.
     jsonType: boolean
     example: false
-    rw: R/W
-    type: bool
   - key: fbuf_age
     alias: fbufAge # TODO: Bad guess - may change!
     title: Fronius Age
@@ -1343,15 +1321,8 @@ properties:
     jsonType: boolean
     example: true
   - key: fre
-    alias: froniusRemainEco
-    title: Remain Eco
     jsonType: boolean
-    example: true
-    rw: R/W
-    type: bool
-    category: Status
-    description: Remain in Eco mode after next trip minimum energy has been charged into to the car
-    homeAssistant:
+    example: false
   - key: frm
     alias: roundingMode
     title: Rounding Mode
@@ -1401,13 +1372,8 @@ properties:
         max: 11000
         step: 100
   - key: fte
-    alias: froniusTripEnergy
-    title: Fronius Trip Energy
-    description: Minimum energy in Watthours to charge in next trip mode.
     jsonType: integer
     example: 50000
-    rw: R/W
-    type: int
   - key: ftlf
     jsonType: boolean
     example: false
@@ -1415,13 +1381,8 @@ properties:
     jsonType: unknown
     example: null
   - key: ftt
-    alias: froniusTripTime
-    title: Fronius Trip Time
-    description: Starting time of your next trip in seconds from midnight local time. 3600 = 01:00 am local time
     jsonType: integer
     example: 25200
-    rw: R/W
-    type: int
   - key: ful
     alias: useDynamicPricing
     title: useDynamicPricing
