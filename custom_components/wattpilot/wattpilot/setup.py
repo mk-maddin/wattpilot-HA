@@ -12,7 +12,7 @@ long_description = (here / 'README.md').read_text(encoding='utf-8')
 
 setup(
     name='wattpilot',
-    version='0.2.3',
+    version='0.2.2c',
     description='Python library to connect to a Fronius Wattpilot Wallbox',
     long_description=long_description,
     long_description_content_type='text/markdown',

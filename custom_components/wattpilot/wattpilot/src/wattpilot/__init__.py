@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 CONST_HASH_PBKDF2 = 'pbkdf2'
 CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
-__version__ = '0.2.2b'
+__version__ = '0.2.2c'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -416,7 +416,7 @@ class Wattpilot(object):
         self._token3 = "%064x" % ran
         self._token3 = self._token3[:32]
         if hasattr(message,'hash'):
-            self._authhashtype = message.hash            
+            self._authhashtype = message.hash
         elif self._devicetype == CONST_WPFLEX_DEVICETYPE:
             self._authhashtype = CONST_HASH_BCRYPT
         self.__update_hashedpassword()
@@ -539,6 +539,10 @@ class Wattpilot(object):
         props = message.status.__dict__
         for key in props:
             self.__update_property(key,props[key])
+        if hasattr(message,'partial') and not self._allPropsInitialized:
+            self._allPropsInitialized = not message.partial
+        else:
+            self.__allPropsInitializedFallback=True
 
     def __on_AuthError(self,message):
         if message.message=="Wrong password":
@@ -550,7 +554,6 @@ class Wattpilot(object):
         props = message.status.__dict__
         for key in props:
             self.__update_property(key,props[key])
-
 
     def __on_clearInverters(self,message):
         pass
