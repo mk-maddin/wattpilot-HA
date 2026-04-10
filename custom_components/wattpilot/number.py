@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Final
 import logging
 import asyncio
+import re
 import aiofiles
 import yaml
 import os
@@ -22,10 +23,11 @@ from .const import (
     CONF_PUSH_ENTITIES,
     DOMAIN,
 )
-from .utils import async_SetChargerProp
+from .utils import async_GetChargerProp, async_SetChargerProp
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='number'
+_HEX_COLOR_PATTERN: Final = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     """Set up the sensor platform."""
@@ -66,7 +68,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             if getattr(entity,'_init_failed', True): continue
             entites.append(entity)
             if entity._source == 'property':
-                push_entities[entity._identifier]=entity
+                current = push_entities.get(entity._identifier, None)
+                if current is None:
+                    push_entities[entity._identifier] = [entity]
+                elif isinstance(current, list):
+                    current.append(entity)
+                else:
+                    push_entities[entity._identifier] = [current, entity]
             await asyncio.sleep(0)
         except Exception as e:
             _LOGGER.error("%s - async_setup_entry %s: Reading static yaml configuration failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
@@ -84,6 +92,7 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     
     def _init_platform_specific(self):
         """Platform specific init actions"""
+        self._color_component = self._entity_cfg.get('color_component', None)
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
         if (not (unit_converter := UNIT_CONVERTERS.get(self._attr_device_class)) is None and self._attr_native_unit_of_measurement in unit_converter.VALID_UNITS):
             self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)   
@@ -104,6 +113,19 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
 
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
+        if self._color_component in ('r', 'g', 'b'):
+            rgb = self._parse_hex_color(str(state).strip())
+            if rgb is None:
+                _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: invalid hex color value: %s", self._charger_id, self._identifier, state)
+                return None
+            if self._color_component == 'r':
+                self._attr_native_value = rgb[0]
+            elif self._color_component == 'g':
+                self._attr_native_value = rgb[1]
+            else:
+                self._attr_native_value = rgb[2]
+            return self._attr_native_value
+
         if not self._attr_native_unit_of_measurement is None: self._attr_native_value = state
         return state
 
@@ -112,9 +134,48 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
         """Async: Change the current value."""
         try:
             _LOGGER.debug("%s - %s: async_set_native_value: value was changed to: %s", self._charger_id, self._identifier, float)
+            if self._color_component in ('r', 'g', 'b'):
+                current = await async_GetChargerProp(self._charger, self._identifier, "#000000")
+                rgb = self._parse_hex_color(str(current).strip())
+                if rgb is None:
+                    _LOGGER.warning("%s - %s: async_set_native_value: invalid current color %s, using #000000", self._charger_id, self._identifier, current)
+                    rgb = (0, 0, 0)
+
+                v = int(float(value))
+                if v < 0:
+                    v = 0
+                elif v > 255:
+                    v = 255
+
+                if self._color_component == 'r':
+                    new_rgb = (v, rgb[1], rgb[2])
+                elif self._color_component == 'g':
+                    new_rgb = (rgb[0], v, rgb[2])
+                else:
+                    new_rgb = (rgb[0], rgb[1], v)
+
+                await async_SetChargerProp(self._charger, self._identifier, self._rgb_to_hex(new_rgb), force_type='string')
+                return
+
             if (self._identifier == 'fte'):
                 _LOGGER.debug("%s - %s: async_set_native_value: apply ugly workaround to always set next trip distance to kWH instead of KM", self._charger_id, self._identifier)
                 await async_SetChargerProp(self._charger,'esk',True)                 
             await async_SetChargerProp(self._charger,self._identifier,value,force_type=self._set_type)
         except Exception as e:
             _LOGGER.error("%s - %s: update failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
+
+    @staticmethod
+    def _parse_hex_color(hex_value: str) -> tuple[int, int, int] | None:
+        """Parse #RRGGBB into an RGB tuple."""
+        if not _HEX_COLOR_PATTERN.match(hex_value):
+            return None
+        return (
+            int(hex_value[1:3], 16),
+            int(hex_value[3:5], 16),
+            int(hex_value[5:7], 16),
+        )
+
+    @staticmethod
+    def _rgb_to_hex(rgb: tuple[int, int, int]) -> str:
+        """Convert RGB tuple to #RRGGBB string."""
+        return f"#{int(rgb[0]):02X}{int(rgb[1]):02X}{int(rgb[2]):02X}"

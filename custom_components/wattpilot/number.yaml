@@ -99,6 +99,161 @@ number:
     unit_of_measurement: "ms"
     entity_category: config
 
+  - id: lbr
+    set_type: int
+    name: "LED Brightness"
+    description: "Brightness of the LED ring"
+    icon: "mdi:brightness-6"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    entity_category: config
+
+  - id: cch_r
+    uid: cch_r
+    name: "LED Color Charging Red"
+    description: "Red channel of charging LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: r
+    entity_category: config
+
+  - id: cch_g
+    uid: cch_g
+    name: "LED Color Charging Green"
+    description: "Green channel of charging LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: g
+    entity_category: config
+
+  - id: cch_b
+    uid: cch_b
+    name: "LED Color Charging Blue"
+    description: "Blue channel of charging LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: b
+    entity_category: config
+
+  - id: cfi_r
+    uid: cfi_r
+    name: "LED Color Finished Red"
+    description: "Red channel of finished LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: r
+    entity_category: config
+
+  - id: cfi_g
+    uid: cfi_g
+    name: "LED Color Finished Green"
+    description: "Green channel of finished LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: g
+    entity_category: config
+
+  - id: cfi_b
+    uid: cfi_b
+    name: "LED Color Finished Blue"
+    description: "Blue channel of finished LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: b
+    entity_category: config
+
+  - id: cid_r
+    uid: cid_r
+    name: "LED Color Idle Red"
+    description: "Red channel of idle LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: r
+    entity_category: config
+
+  - id: cid_g
+    uid: cid_g
+    name: "LED Color Idle Green"
+    description: "Green channel of idle LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: g
+    entity_category: config
+
+  - id: cid_b
+    uid: cid_b
+    name: "LED Color Idle Blue"
+    description: "Blue channel of idle LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: b
+    entity_category: config
+
+  - id: cwc_r
+    uid: cwc_r
+    name: "LED Color Wait Car Red"
+    description: "Red channel of wait-car LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: r
+    entity_category: config
+
+  - id: cwc_g
+    uid: cwc_g
+    name: "LED Color Wait Car Green"
+    description: "Green channel of wait-car LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: g
+    entity_category: config
+
+  - id: cwc_b
+    uid: cwc_b
+    name: "LED Color Wait Car Blue"
+    description: "Blue channel of wait-car LED color"
+    icon: "mdi:palette"
+    native_min_value: 0
+    native_max_value: 255
+    native_step: 1
+    mode: slider
+    color_component: b
+    entity_category: config
+
   - id: fot
     set_type: int
     name: "Ohmpilot threshold"
