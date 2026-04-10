@@ -125,7 +125,9 @@ async def async_service_SetGoECloud(hass: HomeAssistant, call: ServiceCall) -> N
 
             _LOGGER.debug("%s - async_service_SetGoECloud: Saving api key to data store", DOMAIN)
             entry_data[CONF_API_KEY]=charger.cak
-            _LOGGER.info("%s - async_service_SetGoECloud: %s cloud API key stored", DOMAIN, charger.name)
+            api_key = str(entry_data[CONF_API_KEY]) if entry_data[CONF_API_KEY] is not None else ""
+            masked_api_key = f"{api_key[:2]}***{api_key[-2:]}" if len(api_key) > 4 else "***"
+            _LOGGER.info("%s - async_service_SetGoECloud: %s cloud API key: %s", DOMAIN, charger.name, masked_api_key)
 
             serial = getattr(charger,'serial', await async_GetChargerProp(charger,'sse',False))
             if serial:
