@@ -133,7 +133,7 @@ class ChargerNumber(ChargerPlatformEntity, NumberEntity):
     async def async_set_native_value(self, value) -> None:
         """Async: Change the current value."""
         try:
-            _LOGGER.debug("%s - %s: async_set_native_value: value was changed to: %s", self._charger_id, self._identifier, float)
+            _LOGGER.debug("%s - %s: async_set_native_value: value was changed to: %s", self._charger_id, self._identifier, value)
             if self._color_component in ('r', 'g', 'b'):
                 current = await async_GetChargerProp(self._charger, self._identifier, "#000000")
                 rgb = self._parse_hex_color(str(current).strip())
