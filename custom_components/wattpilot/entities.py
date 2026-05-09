@@ -27,6 +27,7 @@ from .utils import (
     async_GetChargerProp,
     GetChargerProp,
 )
+from homeassistant.util.dt import parse_datetime
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -80,7 +81,11 @@ class ChargerPlatformEntity(Entity):
 
             self._attributes = {}
             self._attributes['description'] = self._entity_cfg.get('description', None)            
-            setattr(self, self._state_attr, self._entity_cfg.get('default_state', STATE_UNKNOWN))            
+            
+            init_state = self._entity_cfg.get('default_state', STATE_UNKNOWN)
+            if init_state == STATE_UNKNOWN:
+                init_state = None
+            setattr(self, self._state_attr, init_state)            
 
             self._init_platform_specific()
 
@@ -211,7 +216,11 @@ class ChargerPlatformEntity(Entity):
             return True
         elif self._source == 'namespacelist':
             return True
-        elif getattr(self,self._state_attr,STATE_UNKNOWN) == self._entity_cfg.get('default_state', STATE_UNKNOWN):
+            
+        current_state = getattr(self, self._state_attr, STATE_UNKNOWN)
+        default_state = self._entity_cfg.get('default_state', STATE_UNKNOWN)
+        
+        if current_state == default_state or (current_state is None and default_state == STATE_UNKNOWN):
             return True
         else:
             return False
@@ -327,7 +336,21 @@ class ChargerPlatformEntity(Entity):
                 state = await self._async_update_validate_property(state)
            
             state = await self._async_update_validate_platform_state(state)
+            
             if not state is None:
+                if state == STATE_UNKNOWN:
+                    state = None
+                elif self._attr_device_class == 'timestamp' and isinstance(state, str):
+                    try:
+                        # Fix Fronius non-standard timezone spacing (e.g., " +08:00" -> "+08:00")
+                        clean_state = state.replace(' +', '+').replace(' -', '-')
+                        parsed = parse_datetime(clean_state)
+                        
+                        # Force it to be a datetime object or None (Unknown) to prevent HA crashes
+                        state = parsed 
+                    except Exception:
+                        state = None
+
                 setattr(self, self._state_attr, state)
                 self.async_write_ha_state()
             #_LOGGER.debug("%s - %s: async_local_poll complete: %s", self._charger_id, self._identifier, state)
@@ -350,7 +373,21 @@ class ChargerPlatformEntity(Entity):
                 state = await self._async_update_validate_property(state)
             
             state = await self._async_update_validate_platform_state(state)
+            
             if not state is None:
+                if state == STATE_UNKNOWN:
+                    state = None
+                elif self._attr_device_class == 'timestamp' and isinstance(state, str):
+                    try:
+                        # Fix Fronius non-standard timezone spacing (e.g., " +08:00" -> "+08:00")
+                        clean_state = state.replace(' +', '+').replace(' -', '-')
+                        parsed = parse_datetime(clean_state)
+                        
+                        # Force it to be a datetime object or None (Unknown) to prevent HA crashes
+                        state = parsed
+                    except Exception:
+                        state = None
+
                 setattr(self, self._state_attr, state)
                 self.async_write_ha_state()
                 #_LOGGER.debug("%s - %s: async_local_push complete: %s", self._charger_id, self._identifier, state)
