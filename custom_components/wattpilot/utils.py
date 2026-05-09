@@ -112,9 +112,12 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         #_LOGGER.debug("%s - async_PropertyUpdateHandler: get entry_data", entry_id)
         entry_data=hass.data[DOMAIN][entry_id]
        
-        entity=entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
-        if not entity is None:
-            hass.async_create_task(entity.async_local_push(value))
+        entities = entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
+        if isinstance(entities, list):
+            for entity in entities:
+                hass.async_create_task(entity.async_local_push(value))
+        elif not entities is None:
+            hass.async_create_task(entities.async_local_push(value))
 
         if identifier in EVENT_PROPS:
             charger_id = str(entry_data[CONF_PARAMS].get(CONF_FRIENDLY_NAME, entry_data[CONF_PARAMS].get(CONF_IP_ADDRESS, DEFAULT_NAME)))
