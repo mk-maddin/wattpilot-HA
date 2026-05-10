@@ -327,7 +327,6 @@ sensor:
     description: "Local time on the charger"
     icon: "mdi:clock-outline"
     enabled: False
-    device_class: timestamp
     entity_category: diagnostic
     connection: local
 
