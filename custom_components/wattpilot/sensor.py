@@ -110,7 +110,11 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
                 pass
             else:
                 _LOGGER.warning("%s - %s: _async_update_validate_platform_state failed: state %s not within enum values: %s", self._charger_id, self._identifier, state, self._state_enum)
-            if not self._attr_native_unit_of_measurement is None and state != STATE_UNKNOWN: self._attr_native_value = state
+            if not self._attr_native_unit_of_measurement is None:
+                if state == STATE_UNKNOWN:
+                    self._attr_native_value = None
+                    return None
+                self._attr_native_value = state
             return state
         except Exception as e:
             _LOGGER.error("%s - %s: _async_update_validate_platform_state failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)

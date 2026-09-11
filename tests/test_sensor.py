@@ -73,7 +73,7 @@ class TestSensorInit:
 class TestSensorStateValidation:
 
     async def test_unknown_state_not_written_to_native_value(self):
-        """When state is STATE_UNKNOWN, _attr_native_value must keep its previous value."""
+        """STATE_UNKNOWN must not reach _attr_native_value of a numeric sensor."""
         s = _sensor({"id": "eto", "source": "property", "name": "Charged",
                      "device_class": "energy", "state_class": "total",
                      "unit_of_measurement": "Wh", "default_state": -1})
@@ -85,10 +85,8 @@ class TestSensorStateValidation:
 
         result = await s._async_update_validate_platform_state(STATE_UNKNOWN)
 
-        # Return value is STATE_UNKNOWN (HA uses this)
-        assert result == STATE_UNKNOWN
-        # But the stored native_value must NOT have been overwritten with the string
-        assert s._attr_native_value == 9999
+        # None makes async_local_push skip its setattr and async_write_ha_state
+        assert result is None
         assert not isinstance(s._attr_native_value, str)
 
     async def test_valid_numeric_state_updates_native_value(self):
