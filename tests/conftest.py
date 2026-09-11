@@ -137,6 +137,7 @@ def _stub_const():
         DEFAULT_NAME="Wattpilot",
         DEFAULT_TIMEOUT=15,
         DOMAIN="wattpilot",
+        WATTPILOT_CONNECTION_SENTINEL="__wattpilot_connection__",
         EVENT_PROPS_ID="wattpilot_property_message",
         EVENT_PROPS=["ftt", "cak"],
         CLOUD_API_URL_PREFIX="https://",

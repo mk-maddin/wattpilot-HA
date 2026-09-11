@@ -16,6 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 CONST_HASH_PBKDF2 = 'pbkdf2'
 CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
+
+RECONNECT_SECONDS = 30
+
+# pushed through the property callback when the socket drops
+CONNECTION_SENTINEL = '__wattpilot_connection__'
 __version__ = '0.2.2c'
 
 class LoadMode():
@@ -286,11 +291,47 @@ class Wattpilot(object):
 
         return ret
     def connect(self):
-        self._wst = threading.Thread(target=self._wsapp.run_forever)
-        self._wst.daemon = True
+        """Start the websocket and reconnect whenever it drops."""
+        self._stop = False
+
+        def _supervise():
+            while not self._stop:
+                try:
+                    try:
+                        self._wsapp.run_forever(reconnect=RECONNECT_SECONDS)
+                    except TypeError:
+                        # websocket-client < 1.3.2 has no reconnect kwarg
+                        self._wsapp.run_forever()
+                except Exception as e:
+                    _LOGGER.warning("connect: websocket loop raised %s (%s)", str(e), type(e).__name__)
+                if self._stop:
+                    break
+                self._set_disconnected()
+                _LOGGER.warning("connect: websocket closed, reconnecting in %s seconds", RECONNECT_SECONDS)
+                sleep(RECONNECT_SECONDS)
+
+        self._wst = threading.Thread(target=_supervise, name='wattpilot-ws-supervisor', daemon=True)
         self._wst.start()
-        
         _LOGGER.info("Wattpilot connected")
+
+    def disconnect(self):
+        """Close the socket and stop reconnecting."""
+        self._stop = True
+        try:
+            self._wsapp.close()
+        except Exception as e:
+            _LOGGER.debug("disconnect: closing websocket failed: %s", str(e))
+        self._set_disconnected()
+        _LOGGER.info("disconnect: Wattpilot disconnected")
+
+    def _set_disconnected(self):
+        """Mark the socket down and notify the property listener."""
+        self._connected = False
+        if self._property_callback is not None:
+            try:
+                self._property_callback(CONNECTION_SENTINEL, False)
+            except Exception as e:
+                _LOGGER.debug("_set_disconnected: sentinel callback failed: %s", str(e))
 
     def register_message_callback(self,callback_fn):
         """signature of callback_fn: (wsapp,msg)"""
@@ -570,13 +611,14 @@ class Wattpilot(object):
             _LOGGER.error("Error Sending Request %s. Message: %s" ,message.requestId,message.message)
 
     def __on_error(self,wsapp,err):
-        self._wsapp.close()
-        self._connected=False
-        sleep(30)
-        self._wsapp.run_forever()
+        # reconnection is owned by connect()
+        _LOGGER.warning("__on_error: charger websocket error: %s", err)
+        self._set_disconnected()
 
     def __on_close(self,wsapp,code,msg):
-        self._connected=False
+        # notify here, not in connect(): run_forever(reconnect=...) never returns
+        _LOGGER.warning("__on_close: charger websocket closed (code=%s)", code)
+        self._set_disconnected()
 
     def __on_message(self, wsapp, message):
         ## called whenever a message through websocket is received
