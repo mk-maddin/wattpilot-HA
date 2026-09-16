@@ -25,6 +25,15 @@ class LoadMode():
     NEXTTRIP=5
 
 
+def _translate(table, value):
+    """Translate a raw charger value, without raising out of the ws callback."""
+    try:
+        return table[value]
+    except KeyError:
+        _LOGGER.warning("_translate: no entry for value %r in %s - reporting as unknown", value, table)
+        return "unknown (%s)" % (value,)
+
+
 class Wattpilot(object):
 
     carValues = {}
@@ -43,10 +52,12 @@ class Wattpilot(object):
     astValues[1] = "locked"
     astValues[2] = "auto"
 
+    carValues[0] = "Unknown"
     carValues[1] = "no car"
     carValues[2] = "charging"
     carValues[3] = "ready"
     carValues[4] = "complete"
+    carValues[5] = "Error"
 
     alwValues[0] = False
     alwValues[1] = True
@@ -332,7 +343,7 @@ class Wattpilot(object):
 
         self._allProps[name] = value
         if name=="acs":
-            self._AccessState = Wattpilot.acsValues[value]
+            self._AccessState = _translate(Wattpilot.acsValues, value)
 
         if name=="cbl":
             self._cableType = value
@@ -347,10 +358,10 @@ class Wattpilot(object):
             self._energyCounterSinceStart = value
 
         if name=="err":
-            self._errorState = Wattpilot.errValues[value]
+            self._errorState = _translate(Wattpilot.errValues, value)
 
         if name=="ust":
-            self._cableLock = Wattpilot.ustValues[value]
+            self._cableLock = _translate(Wattpilot.ustValues, value)
 
         if name=="eto":
             self._energyCounterTotal = value
@@ -360,11 +371,11 @@ class Wattpilot(object):
         if name=="cak":
             self._cak = value
         if name=="lmo":
-            self._mode = Wattpilot.lmoValues[value]
+            self._mode = _translate(Wattpilot.lmoValues, value)
         if name=="car":
-            self._carConnected = Wattpilot.carValues[value]
+            self._carConnected = _translate(Wattpilot.carValues, value)
         if name=="alw":
-            self._AllowCharging = Wattpilot.alwValues[value]
+            self._AllowCharging = _translate(Wattpilot.alwValues, value)
         if name=="nrg":
             self._voltage1=value[0]
             self._voltage2=value[1]
@@ -383,7 +394,7 @@ class Wattpilot(object):
         if name=="version":
             self._version = value
         if name=="ast":
-            self._AllowCharging = self._astValues[value]
+            self._AllowCharging = _translate(self._astValues, value)
         if name=="fwv":
             self._firmware = value
         if name=="wss":
