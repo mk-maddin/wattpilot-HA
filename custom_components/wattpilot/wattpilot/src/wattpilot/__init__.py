@@ -312,7 +312,7 @@ class Wattpilot(object):
 
         self._wst = threading.Thread(target=_supervise, name='wattpilot-ws-supervisor', daemon=True)
         self._wst.start()
-        _LOGGER.info("Wattpilot connected")
+        _LOGGER.info("connect: Wattpilot connected")
 
     def disconnect(self):
         """Close the socket and stop reconnecting."""
