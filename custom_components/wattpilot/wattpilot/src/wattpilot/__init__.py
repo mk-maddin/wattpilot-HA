@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 CONST_HASH_PBKDF2 = 'pbkdf2'
 CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
-__version__ = '0.2.2c'
+__version__ = '0.2.2d'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -574,9 +574,15 @@ class Wattpilot(object):
 
     def __on_response(self,message):
         if message.success:
-            props = message.status.__dict__
-            for key in props:
-                self.__update_property(key,props[key])
+            # Not every successful response carries a status object - the
+            # reboot command's ack does not, since the charger is about to
+            # restart rather than report new property values. Reading
+            # message.status unconditionally raised AttributeError there,
+            # which escaped __on_message uncaught and killed the connection.
+            if hasattr(message,'status'):
+                props = message.status.__dict__
+                for key in props:
+                    self.__update_property(key,props[key])
         else:
             _LOGGER.error("Error Sending Request %s. Message: %s" ,message.requestId,message.message)
 
