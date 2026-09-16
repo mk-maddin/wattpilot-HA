@@ -20,8 +20,8 @@ CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
 RECONNECT_SECONDS = 30
 
 # pushed through the property callback when the socket drops
-CONNECTION_SENTINEL = '__wattpilot_connection__'
-__version__ = '0.2.2c'
+CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
+__version__ = '0.2.2d'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -329,7 +329,7 @@ class Wattpilot(object):
         self._connected = False
         if self._property_callback is not None:
             try:
-                self._property_callback(CONNECTION_SENTINEL, False)
+                self._property_callback(CONST_CONNECTION_SENTINEL, False)
             except Exception as e:
                 _LOGGER.debug("_set_disconnected: sentinel callback failed: %s", str(e))
 
