@@ -6,6 +6,7 @@ import logging
 import asyncio
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
 from homeassistant.const import CONF_PARAMS
 from homeassistant.loader import async_get_integration
@@ -55,11 +56,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try: 
         _LOGGER.debug("%s - async_setup_entry: Connecting charger", entry.entry_id)
         charger = await async_ConnectCharger(entry.entry_id, entry.data)
-        if charger == False: return False 
+        # not ready rather than failed, so HA retries instead of giving up -
+        # after a power cut HA boots before the charger does
+        if charger == False:
+            raise ConfigEntryNotReady("charger not reachable yet")
+    except ConfigEntryNotReady:
+        raise
     except Exception as e:
         _LOGGER.error("%s - async_setup_entry: Connecting charger failed: %s (%s.%s)", entry.entry_id, str(e), e.__class__.__module__, type(e).__name__)
         async_DisconnectCharger(entry.entry_id, charger)
-        return False
+        raise ConfigEntryNotReady(str(e)) from e
 
     try:
         _LOGGER.debug("%s - async_setup_entry: Creating data store: %s.%s ", entry.entry_id, DOMAIN, entry.entry_id)
