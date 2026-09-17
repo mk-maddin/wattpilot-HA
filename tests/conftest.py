@@ -109,7 +109,8 @@ _stub_module("packaging.version", Version=_Version)
 
 # wattpilot
 _wattpilot_stub = _stub_module("wattpilot", Wattpilot=object,
-                                __file__="<stub>", __version__="0.2.2")
+                                __file__="<stub>", __version__="0.2.2",
+                                CONST_CONNECTION_SENTINEL="__wattpilot_connection__")
 
 # aiofiles (used by sensor.py / yaml loading)
 import unittest.mock as _mock
@@ -137,7 +138,6 @@ def _stub_const():
         DEFAULT_NAME="Wattpilot",
         DEFAULT_TIMEOUT=15,
         DOMAIN="wattpilot",
-        WATTPILOT_CONNECTION_SENTINEL="__wattpilot_connection__",
         EVENT_PROPS_ID="wattpilot_property_message",
         EVENT_PROPS=["ftt", "cak"],
         CLOUD_API_URL_PREFIX="https://",

@@ -18,7 +18,6 @@ from homeassistant.const import (
 )
 
 from .const import (
-    WATTPILOT_CONNECTION_SENTINEL,
     CONF_CHARGER,
     CONF_CONNECTION,
     CONF_CLOUD,
@@ -113,7 +112,7 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         #_LOGGER.debug("%s - async_PropertyUpdateHandler: get entry_data", entry_id)
         entry_data=hass.data[DOMAIN][entry_id]
        
-        if identifier == WATTPILOT_CONNECTION_SENTINEL:
+        if identifier == wattpilot.CONST_CONNECTION_SENTINEL:
             # push entities never write state while the socket is down, so
             # available() would not be re-evaluated without this
             for push_entity in list(entry_data.get(CONF_PUSH_ENTITIES, {}).values()):
