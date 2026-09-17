@@ -112,6 +112,16 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
         #_LOGGER.debug("%s - async_PropertyUpdateHandler: get entry_data", entry_id)
         entry_data=hass.data[DOMAIN][entry_id]
        
+        if identifier == wattpilot.CONST_CONNECTION_SENTINEL:
+            # push entities never write state while the socket is down, so
+            # available() would not be re-evaluated without this
+            for push_entity in list(entry_data.get(CONF_PUSH_ENTITIES, {}).values()):
+                try:
+                    push_entity.async_write_ha_state()
+                except Exception as e:
+                    _LOGGER.debug("%s - async_PropertyUpdateHandler: connection refresh skipped an entity: %s", entry_id, str(e))
+            return
+
         entity=entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
         if not entity is None:
             hass.async_create_task(entity.async_local_push(value))
