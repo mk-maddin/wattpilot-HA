@@ -139,7 +139,7 @@ select:
       0: "Neutral"
       1: "Stopped"
       2: "Forced on"
-    description: "Charging force state. Neutral leaves the decision to the charging mode, Stopped blocks charging, Forced on charges regardless of PV surplus or price. The three Start/Stop Charging buttons write this same property, so this select also shows which of them is currently in effect."
+    description: "Neutral defers to the charging mode, Stopped blocks charging, Forced on ignores PV surplus/price. Mirrors the three Start/Stop Charging buttons."
     icon: "mdi:electric-switch"
     entity_category: config
 
