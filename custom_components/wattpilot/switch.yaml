@@ -106,6 +106,7 @@ switch:
     icon: "mdi:timeline-clock-outline"
     enabled: False
     entity_category: config
+    firmware: "<43.4"
 
   - id: upo
     name: "Unlock Power Outage"
