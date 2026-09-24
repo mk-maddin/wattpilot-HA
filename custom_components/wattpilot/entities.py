@@ -149,13 +149,18 @@ class ChargerPlatformEntity(Entity):
         if hw_typ_tst is None:
             return True
 
+        if isinstance(hw_typ_tst, list):
+            supported_hw_types = [str(hw_typ) for hw_typ in hw_typ_tst]
+        else:
+            supported_hw_types = [str(hw_typ_tst)]
+
         hw_typ = GetChargerProp(self._charger, "typ", None)
         if hw_typ is None:
             _LOGGER.error("%s - %s: _check_hw_typ_supported: Cannot identify charger hardware type", self._charger_id, self._identifier)
             return False
 
-        v = str(hw_typ) == str(hw_typ_tst)
-        _LOGGER.debug("%s - %s: _check_hw_typ_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, hw_typ, hw_typ_tst, v)
+        v = str(hw_typ) in supported_hw_types
+        _LOGGER.debug("%s - %s: _check_hw_typ_supported complete (%s in %s -> %s)", self._charger_id, self._identifier, hw_typ, supported_hw_types, v)
         return v
 
 
