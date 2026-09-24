@@ -20,7 +20,7 @@ sensor:
 #    enum: <optional dict to map states to enum values>
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
-#    hw_typ:  <optional string "wattpilot / wattpilot_V2 / wattpilot_flex" to setup entity only if charger hardware type matches>
+#    hw_typ:  <optional string or list of strings "wattpilot / wattpilot_v2 / wattpilot_flex" to setup entity only if charger hardware type matches>
 #    hw_grp: <optional string "Go / Home" to match against the charger hardware group>
 #    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
@@ -252,6 +252,9 @@ sensor:
     description: "Cable unlock status - values are: 'Unknown', 'Unlocked', 'UnlockFailed', 'Locked', 'LockFailed', 'LockUnlockPowerout'"
     icon: "mdi:state-machine"
     entity_category: diagnostic
+    hw_typ:
+      - wattpilot
+      - wattpilot_v2
 
   - source: property
     id: err
@@ -308,6 +311,9 @@ sensor:
     icon: "mdi:lock-reset"
     enabled: False
     entity_category: diagnostic
+    hw_typ:
+      - wattpilot
+      - wattpilot_v2
 
   - source: property
     id: lck
