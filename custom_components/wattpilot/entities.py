@@ -252,6 +252,7 @@ class ChargerPlatformEntity(Entity):
             if not isinstance(_ns_val, list) or _ns_val[int(self._namespace_id)] is None:
                 _LOGGER.debug("%s - %s: available: false because unknown namespacelist item: %s", self._charger_id, self._identifier, self._namespace_id)
                 return False
+            return True
         else:
             return True
 
