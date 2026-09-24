@@ -1,5 +1,3 @@
-# version: 2021.12.19
-# author: Martin Kraemer, mk.maddin@gmail.com
 # description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/apikeys-de.md
 
@@ -16,6 +14,8 @@ select:
 #    entity_category: <optional: key within HA>
 #    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
 #    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
+#    hw_typ:  <optional string "wattpilot / wattpilot_V2 / wattpilot_flex" to setup entity only if charger hardware type matches>
+#    hw_grp: <optional string "Go / Home" to match against the charger hardware group>
 #    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
 #    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 

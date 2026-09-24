@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Final
 import logging
 import asyncio
+import re
 from packaging.version import Version
 
 from homeassistant.core import HomeAssistant
@@ -57,6 +58,10 @@ class ChargerPlatformEntity(Entity):
             if not self._fw_supported == True: return None
             self._variant_supported = self._check_variant_supported()
             if not self._variant_supported == True: return None
+            self._hw_typ_supported = self._check_hw_typ_supported()
+            if not self._hw_typ_supported == True: return None
+            self._hw_grp_supported = self._check_hw_grp_supported()
+            if not self._hw_grp_supported == True: return None
             self._connection_supported = self._check_connection_supported()
             if not self._connection_supported == True: return None
             
@@ -135,6 +140,43 @@ class ChargerPlatformEntity(Entity):
         if str(variant).upper() == str(v_tst).upper(): v=True
         else: v=False
         _LOGGER.debug("%s - %s: _check_variant_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, variant, v_tst, v)
+        return v
+        
+        
+    def _check_hw_typ_supported(self):
+        """Return if the charger hardware type supports this entity."""
+        hw_typ_tst = self._entity_cfg.get("hw_typ", None)
+        if hw_typ_tst is None:
+            return True
+
+        hw_typ = GetChargerProp(self._charger, "typ", None)
+        if hw_typ is None:
+            _LOGGER.error("%s - %s: _check_hw_typ_supported: Cannot identify charger hardware type", self._charger_id, self._identifier)
+            return False
+
+        v = str(hw_typ) == str(hw_typ_tst)
+        _LOGGER.debug("%s - %s: _check_hw_typ_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, hw_typ, hw_typ_tst, v)
+        return v
+
+
+    def _check_hw_grp_supported(self):
+        """Return if the charger hardware group supports this entity."""
+        hw_grp_tst = self._entity_cfg.get("hw_grp", None)
+        if hw_grp_tst is None:
+            return True
+
+        hw_grp = GetChargerProp(self._charger, "grp", None)
+        if hw_grp is None:
+            _LOGGER.error("%s - %s: _check_hw_grp_supported: Cannot identify charger hardware group", self._charger_id, self._identifier)
+            return False
+
+        try:
+            v = re.search(str(hw_grp_tst), str(hw_grp)) is not None
+        except re.error as err:
+            _LOGGER.error("%s - %s: _check_hw_grp_supported: Invalid hardware group regex %s: %s", self._charger_id, self._identifier, hw_grp_tst, err)
+            return False
+
+        _LOGGER.debug("%s - %s: _check_hw_grp_supported complete (%s=%s -> %s)", self._charger_id, self._identifier, hw_grp, hw_grp_tst, v)
         return v
 
 

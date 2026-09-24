@@ -1,7 +1,24 @@
-# version: 2026.07.26
-# author: David Freina, david@freina.at
 # description: YAML configuration file - holding predefined entities
 #   see: https://github.com/goecharger/go-eCharger-API-v2/blob/main/API_KEYS_FIRMWARE/apikeys-de.md
+
+#  - id: <name of the charger prop holding updates available list - this ALWAYS has to be a property, not attribute>
+#    id_installed: <name of the charger prop containing currently installed update version - this ALWAYS has to be a property, not attribute>
+#    id_trigger: <optional: name of the charger prop where the to be installed update version is written to, without it no install is possible - this ALWAYS has to be a property, not attribute>
+#    id_status: <optional: name of the charger prop which holds current install percentage of running install - this ALWAYS has to be a property, not attribute>
+#    set_type: <optional: type required by wattpilot api for setting value. 'bool','int','float' & 'string'>
+#    uid: <optional: unique ID postfix - required if mutliple entities wiht same <id> value exist>
+#    name: <optional: name of the entity within HA>
+#    description: <optional: key within HA>
+#    icon: <optional: key within HA>
+#    enabled: <optional: if set to False entity is by default disabled>
+#    device_class: <optional: key within HA>
+#    entity_category: <optional: key within HA>
+#    firmware: <optional string ">=1.1" | "<=1.1" | "==1.1" | "<1.1" | ">1.1" to setup entity only if charger firmware matches>
+#    variant: <optional string "11 / 22" to setup entity only if charger variant matches 11kW version or 22kW version>
+#    hw_typ:  <optional string "wattpilot / wattpilot_V2 / wattpilot_flex" to setup entity only if charger hardware type matches>
+#    hw_grp: <optional string "Go / Home" to match against the charger hardware group>
+#    connection: <optional string "cloud / local" to setup entity only if charger connection type matches>
+#    default_state: <optional value to use as default state for "None"/"Null" charger properties - the default is STATE_UNKNOWN. Use with caution>
 
 binary_sensor:
   - id: alw
