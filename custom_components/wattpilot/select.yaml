@@ -134,6 +134,7 @@ select:
     entity_category: config
 
   - id: frc
+    uid: frc
     name: "Force State"
     options:
       0: "Neutral"
@@ -142,6 +143,7 @@ select:
     description: "Neutral defers to the charging mode, Stopped blocks charging, Forced on ignores PV surplus/price. Mirrors the three Start/Stop Charging buttons."
     icon: "mdi:electric-switch"
     entity_category: config
+    enabled: False
 
   - id: lmo
     options: lmoValues
