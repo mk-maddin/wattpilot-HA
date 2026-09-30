@@ -21,7 +21,7 @@ RECONNECT_SECONDS = 30
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
-__version__ = '0.2.2d'
+__version__ = '0.2.2e'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -615,9 +615,10 @@ class Wattpilot(object):
 
     def __on_response(self,message):
         if message.success:
-            props = message.status.__dict__
-            for key in props:
-                self.__update_property(key,props[key])
+            if hasattr(message,'status'):
+                props = message.status.__dict__
+                for key in props:
+                    self.__update_property(key,props[key])
         else:
             _LOGGER.error("Error Sending Request %s. Message: %s" ,message.requestId,message.message)
 
