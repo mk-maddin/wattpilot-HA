@@ -21,7 +21,7 @@ RECONNECT_SECONDS = 30
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
-__version__ = '0.2.2e'
+__version__ = '0.2.2f'
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -627,6 +627,10 @@ class Wattpilot(object):
         _LOGGER.warning("__on_error: charger websocket error: %s", err)
         self._set_disconnected()
 
+    def __on_open(self,wsapp):
+        if self._stop:
+            wsapp.close()
+
     def __on_close(self,wsapp,code,msg):
         # notify here, not in connect(): run_forever(reconnect=...) never returns
         _LOGGER.warning("__on_close: charger websocket closed (code=%s)", code)
@@ -710,6 +714,6 @@ class Wattpilot(object):
         self._wst=threading.Thread()
 
         websocket.setdefaulttimeout(10)
-        self._wsapp = websocket.WebSocketApp(self.url, on_message=self.__on_message, on_error=self.__on_error, on_close=self.__on_close)
+        self._wsapp = websocket.WebSocketApp(self.url, on_open=self.__on_open, on_message=self.__on_message, on_error=self.__on_error, on_close=self.__on_close)
         _LOGGER.info ("Wattpilot %s initilized",self.serial)
 
