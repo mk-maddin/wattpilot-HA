@@ -89,8 +89,10 @@ class TestPropertyUpdateHandler:
         from unittest import mock
         utils = self._utils()
         with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe", side_effect=RuntimeError("Event loop is closed")):
-            with mock.patch.object(utils, "async_PropertyUpdateHandler", mock.MagicMock()):
+            handler = mock.MagicMock()
+            with mock.patch.object(utils, "async_PropertyUpdateHandler", handler):
                 assert utils.PropertyUpdateHandler(self._hass(), "entry", "car", 1) is None
+            handler.return_value.close.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_async_handler_error_returns_none_not_nameerror(self):
