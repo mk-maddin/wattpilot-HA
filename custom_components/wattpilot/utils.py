@@ -98,12 +98,19 @@ async def async_PropertyDebug(identifier: str, value: str, include_properties: b
 def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
     """Watches on property updates and executes corresponding action"""
     try:
+        if hass.is_stopping or hass.loop.is_closed():
+            return None
         #_LOGGER.debug("%s - PropertyUpdateHandler: 'self' execute async", entry_id)
         if entry_id in hass.data[DOMAIN]:
-            asyncio.run_coroutine_threadsafe(async_PropertyUpdateHandler(hass, entry_id, identifier, value), hass.loop)
+            coro = async_PropertyUpdateHandler(hass, entry_id, identifier, value)
+            try:
+                asyncio.run_coroutine_threadsafe(coro, hass.loop)
+            except Exception:
+                coro.close()
+                raise
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return default
+        return None
 
 
 async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
@@ -140,7 +147,7 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
             hass.async_create_task(async_PropertyDebug(identifier, value, entry_data.get(CONF_DBG_PROPS)))
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return default
+        return None
 
 
 async def async_GetChargerProp(charger, identifier: str, default=None):
@@ -274,6 +281,7 @@ async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
 
 async def async_ConnectCharger(entry_or_device_id, data, charger=None):
     """Async: connect charger and handle connection errors"""
+    created = charger is None
     try:
         con = data.get(CONF_CONNECTION,CONF_LOCAL)
         if charger is None and con == CONF_LOCAL:
@@ -292,6 +300,8 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         charger.connect()
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Connecting charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        if created and charger is not None:
+            await async_DisconnectCharger(entry_or_device_id, charger)
         return False
     
     try:
@@ -304,15 +314,23 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         if not charger.connected:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not connected: %s (%s sec)", entry_or_device_id, charger.connected, timeout)
             _LOGGER.error("%s - async_ConnectCharger: Try to restart charger via Wattpilot app", entry_or_device_id)
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
         elif not charger.allPropsInitialized: 
             _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not initialized: %s (%s sec)", entry_or_device_id, charger.allPropsInitialized, timeout) 
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
         elif not timeout > timer:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - unknown reason: %s sec", entry_or_device_id, timeout)
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Initialize charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        if created:
+            await async_DisconnectCharger(entry_or_device_id, charger)
         return False
 
     _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  

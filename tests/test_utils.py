@@ -53,3 +53,93 @@ class TestGetChargerProp:
 
     def test_known_int_property(self, charger):
         assert GetChargerProp(charger, "rbc") == 3
+
+
+class TestPropertyUpdateHandler:
+
+    @staticmethod
+    def _utils():
+        import sys
+        return sys.modules["custom_components.wattpilot.utils"]
+
+    @staticmethod
+    def _hass(stopping=False, closed=False):
+        from unittest import mock
+        hass = mock.MagicMock()
+        hass.is_stopping = stopping
+        hass.loop.is_closed.return_value = closed
+        hass.data = {"wattpilot": {"entry": {}}}
+        return hass
+
+    def test_returns_early_when_hass_is_stopping(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
+            assert utils.PropertyUpdateHandler(self._hass(stopping=True), "entry", "car", 1) is None
+        run.assert_not_called()
+
+    def test_returns_early_when_loop_is_closed(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
+            assert utils.PropertyUpdateHandler(self._hass(closed=True), "entry", "car", 1) is None
+        run.assert_not_called()
+
+    def test_scheduling_error_returns_none_not_nameerror(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe", side_effect=RuntimeError("Event loop is closed")):
+            handler = mock.MagicMock()
+            with mock.patch.object(utils, "async_PropertyUpdateHandler", handler):
+                assert utils.PropertyUpdateHandler(self._hass(), "entry", "car", 1) is None
+            handler.return_value.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_async_handler_error_returns_none_not_nameerror(self):
+        utils = self._utils()
+        hass = self._hass()
+        hass.data = {"wattpilot": {}}
+        assert await utils.async_PropertyUpdateHandler(hass, "missing_entry", "car", 1) is None
+
+
+class TestConnectChargerCleanup:
+
+    class _FakeCharger:
+        def __init__(self, **kwargs):
+            self.name = "fake"
+            self.connected = False
+            self.allPropsInitialized = False
+            self.connect_calls = 0
+            self.disconnect_calls = 0
+
+        def connect(self):
+            self.connect_calls += 1
+
+        def disconnect(self):
+            self.disconnect_calls += 1
+
+    @pytest.mark.asyncio
+    async def test_new_charger_disconnected_on_timeout(self):
+        import sys
+        from unittest import mock
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        created = []
+
+        def factory(**kwargs):
+            created.append(self._FakeCharger())
+            return created[-1]
+
+        with mock.patch.object(utils.wattpilot, "Wattpilot", factory, create=True):
+            result = await utils.async_ConnectCharger("entry", {"host": "192.0.2.1", "timeout": 0})
+        assert result is False
+        assert created[0].connect_calls == 1
+        assert created[0].disconnect_calls == 1
+
+    @pytest.mark.asyncio
+    async def test_existing_charger_kept_on_failed_reconnect(self):
+        import sys
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        existing = self._FakeCharger()
+        result = await utils.async_ConnectCharger("entry", {"timeout": 0}, existing)
+        assert result is False
+        assert existing.disconnect_calls == 0
