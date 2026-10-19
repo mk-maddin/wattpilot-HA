@@ -276,6 +276,7 @@ async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
 
 async def async_ConnectCharger(entry_or_device_id, data, charger=None):
     """Async: connect charger and handle connection errors"""
+    created = charger is None
     try:
         con = data.get(CONF_CONNECTION,CONF_LOCAL)
         if charger is None and con == CONF_LOCAL:
@@ -294,6 +295,8 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         charger.connect()
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Connecting charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        if created and charger is not None:
+            await async_DisconnectCharger(entry_or_device_id, charger)
         return False
     
     try:
@@ -306,15 +309,23 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         if not charger.connected:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not connected: %s (%s sec)", entry_or_device_id, charger.connected, timeout)
             _LOGGER.error("%s - async_ConnectCharger: Try to restart charger via Wattpilot app", entry_or_device_id)
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
         elif not charger.allPropsInitialized: 
             _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not initialized: %s (%s sec)", entry_or_device_id, charger.allPropsInitialized, timeout) 
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
         elif not timeout > timer:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - unknown reason: %s sec", entry_or_device_id, timeout)
+            if created:
+                await async_DisconnectCharger(entry_or_device_id, charger)
             return False
     except Exception as e:
         _LOGGER.error("%s - async_ConnectCharger: Initialize charger failed: %s (%s.%s)", entry_or_device_id, str(e), e.__class__.__module__, type(e).__name__)
+        if created:
+            await async_DisconnectCharger(entry_or_device_id, charger)
         return False
 
     _LOGGER.debug("%s - async_ConnectCharger: Charger connected: %s", entry_or_device_id, charger.name)  

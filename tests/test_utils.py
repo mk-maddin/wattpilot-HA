@@ -98,3 +98,46 @@ class TestPropertyUpdateHandler:
         hass = self._hass()
         hass.data = {"wattpilot": {}}
         assert await utils.async_PropertyUpdateHandler(hass, "missing_entry", "car", 1) is None
+
+
+class TestConnectChargerCleanup:
+
+    class _FakeCharger:
+        def __init__(self, **kwargs):
+            self.name = "fake"
+            self.connected = False
+            self.allPropsInitialized = False
+            self.connect_calls = 0
+            self.disconnect_calls = 0
+
+        def connect(self):
+            self.connect_calls += 1
+
+        def disconnect(self):
+            self.disconnect_calls += 1
+
+    @pytest.mark.asyncio
+    async def test_new_charger_disconnected_on_timeout(self):
+        import sys
+        from unittest import mock
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        created = []
+
+        def factory(**kwargs):
+            created.append(self._FakeCharger())
+            return created[-1]
+
+        with mock.patch.object(utils.wattpilot, "Wattpilot", factory, create=True):
+            result = await utils.async_ConnectCharger("entry", {"host": "192.0.2.1", "timeout": 0})
+        assert result is False
+        assert created[0].connect_calls == 1
+        assert created[0].disconnect_calls == 1
+
+    @pytest.mark.asyncio
+    async def test_existing_charger_kept_on_failed_reconnect(self):
+        import sys
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        existing = self._FakeCharger()
+        result = await utils.async_ConnectCharger("entry", {"timeout": 0}, existing)
+        assert result is False
+        assert existing.disconnect_calls == 0
