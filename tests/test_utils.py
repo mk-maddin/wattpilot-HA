@@ -53,3 +53,48 @@ class TestGetChargerProp:
 
     def test_known_int_property(self, charger):
         assert GetChargerProp(charger, "rbc") == 3
+
+
+class TestPropertyUpdateHandler:
+
+    @staticmethod
+    def _utils():
+        import sys
+        return sys.modules["custom_components.wattpilot.utils"]
+
+    @staticmethod
+    def _hass(stopping=False, closed=False):
+        from unittest import mock
+        hass = mock.MagicMock()
+        hass.is_stopping = stopping
+        hass.loop.is_closed.return_value = closed
+        hass.data = {"wattpilot": {"entry": {}}}
+        return hass
+
+    def test_returns_early_when_hass_is_stopping(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
+            assert utils.PropertyUpdateHandler(self._hass(stopping=True), "entry", "car", 1) is None
+        run.assert_not_called()
+
+    def test_returns_early_when_loop_is_closed(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
+            assert utils.PropertyUpdateHandler(self._hass(closed=True), "entry", "car", 1) is None
+        run.assert_not_called()
+
+    def test_scheduling_error_returns_none_not_nameerror(self):
+        from unittest import mock
+        utils = self._utils()
+        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe", side_effect=RuntimeError("Event loop is closed")):
+            with mock.patch.object(utils, "async_PropertyUpdateHandler", mock.MagicMock()):
+                assert utils.PropertyUpdateHandler(self._hass(), "entry", "car", 1) is None
+
+    @pytest.mark.asyncio
+    async def test_async_handler_error_returns_none_not_nameerror(self):
+        utils = self._utils()
+        hass = self._hass()
+        hass.data = {"wattpilot": {}}
+        assert await utils.async_PropertyUpdateHandler(hass, "missing_entry", "car", 1) is None

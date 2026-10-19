@@ -98,12 +98,14 @@ async def async_PropertyDebug(identifier: str, value: str, include_properties: b
 def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
     """Watches on property updates and executes corresponding action"""
     try:
+        if hass.is_stopping or hass.loop.is_closed():
+            return None
         #_LOGGER.debug("%s - PropertyUpdateHandler: 'self' execute async", entry_id)
         if entry_id in hass.data[DOMAIN]:
             asyncio.run_coroutine_threadsafe(async_PropertyUpdateHandler(hass, entry_id, identifier, value), hass.loop)
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return default
+        return None
 
 
 async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
@@ -140,7 +142,7 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
             hass.async_create_task(async_PropertyDebug(identifier, value, entry_data.get(CONF_DBG_PROPS)))
     except Exception as e:
         _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
-        return default
+        return None
 
 
 async def async_GetChargerProp(charger, identifier: str, default=None):
