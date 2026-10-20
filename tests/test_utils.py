@@ -166,3 +166,44 @@ class TestConnectChargerMissingConfig:
         with mock.patch.object(utils.wattpilot, "Wattpilot", factory, create=True):
             assert await utils.async_ConnectCharger("entry", {"connection": "cloud"}) is False
         factory.assert_not_called()
+
+
+class TestSelectEmptyState:
+
+    @staticmethod
+    def _select(entity_cfg):
+        import sys
+        from unittest import mock
+        from tests.conftest import _load_file_as_module
+        sys.modules.setdefault("homeassistant.components", mock.MagicMock())
+        if "homeassistant.components.select" not in sys.modules:
+            select_stub = types.ModuleType("homeassistant.components.select")
+            select_stub.SelectEntity = type("SelectEntity", (), {})
+            sys.modules["homeassistant.components.select"] = select_stub
+        mod = _load_file_as_module("custom_components/wattpilot/select.py", "custom_components.wattpilot.select")
+        entity = object.__new__(mod.ChargerSelect)
+        entity._charger_id = "charger"
+        entity._identifier = "ct"
+        entity._entity_cfg = entity_cfg
+        entity._opt_dict = {"default": "Standard", "kiaSoul": "Kia Soul"}
+        return entity
+
+    @pytest.mark.asyncio
+    async def test_empty_string_maps_to_configured_empty_state(self):
+        entity = self._select({"empty_state": "default"})
+        assert await entity._async_update_validate_platform_state("") == "Standard"
+
+    @pytest.mark.asyncio
+    async def test_empty_string_without_empty_state_is_unknown(self):
+        entity = self._select({})
+        assert await entity._async_update_validate_platform_state("") == "unknown"
+
+    @pytest.mark.asyncio
+    async def test_empty_state_not_in_options_is_unknown(self):
+        entity = self._select({"empty_state": "doesNotExist"})
+        assert await entity._async_update_validate_platform_state("") == "unknown"
+
+    @pytest.mark.asyncio
+    async def test_known_key_still_mapped(self):
+        entity = self._select({"empty_state": "default"})
+        assert await entity._async_update_validate_platform_state("kiaSoul") == "Kia Soul"
