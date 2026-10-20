@@ -16,6 +16,7 @@ from homeassistant.const import (
     CONF_FRIENDLY_NAME,
     CONF_IP_ADDRESS,
     CONF_PARAMS,
+    MATCH_ALL,
     STATE_UNKNOWN,
 )
 
@@ -36,6 +37,9 @@ class ChargerPlatformEntity(Entity):
     """Base class for Fronius Wattpilot integration."""
     _state_attr='state'
     _entity_category = None
+    # Attributes change with every update (e.g. per-phase voltages on Charging Power,
+    # ~1/s while charging) and would create a new state_attributes row each time.
+    _unrecorded_attributes = frozenset({MATCH_ALL})
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
         """Initialize the object."""

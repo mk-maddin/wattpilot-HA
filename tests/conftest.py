@@ -74,6 +74,7 @@ _stub_module("homeassistant.const",
     CONF_PARAMS="params",
     CONF_PASSWORD="password",
     CONF_TIMEOUT="timeout",
+    MATCH_ALL="*",
     STATE_UNKNOWN=STATE_UNKNOWN,
 )
 # HA core
