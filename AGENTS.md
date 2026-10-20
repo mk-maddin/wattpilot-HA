@@ -309,6 +309,9 @@ For Wattpilot JSON export files, perform exhaustive property analysis programmat
 6. Document the commands actually executed for testing and verification, together with their results.
    - Clearly identify checks that were not run and explain why.
    - Recorded commands and results make verification reproducible and clearly distinguish tested behaviour from assumptions.
+   - Run the tests with the same flags as CI (`pytest tests/ -v --tb=short`, and `pytest tests_ha/ -v --tb=short` for the real Home Assistant tests). Do not disable log output with `-o log_cli=false` or `-q` alone when verifying.
+     - Traced failure: the options flow test passed locally with `-o log_cli=false` but failed in CI. A `_LOGGER.debug` call without a placeholder for its argument only raises a `TypeError` when the log record is actually formatted, which happens only with the CI log settings. The generic exception handler of the flow then aborted it with "exception".
+     - `tests/test_logging_format.py` now checks all `_LOGGER` calls statically. Keep every `_LOGGER` call's placeholders and arguments in sync.
 7. Do not claim that a change works unless it has been run and verified.
    - State plainly what was verified, what was assumed and what could not be checked.
    - If verification requires a real Fronius/SolarWeb account, Wattpilot device or unavailable hardware, state that limitation rather than implying coverage.
