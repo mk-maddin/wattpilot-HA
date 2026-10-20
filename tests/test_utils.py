@@ -143,3 +143,26 @@ class TestConnectChargerCleanup:
         result = await utils.async_ConnectCharger("entry", {"timeout": 0}, existing)
         assert result is False
         assert existing.disconnect_calls == 0
+
+
+class TestConnectChargerMissingConfig:
+
+    @pytest.mark.asyncio
+    async def test_missing_ip_returns_false_without_creating_charger(self):
+        import sys
+        from unittest import mock
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        factory = mock.MagicMock()
+        with mock.patch.object(utils.wattpilot, "Wattpilot", factory, create=True):
+            assert await utils.async_ConnectCharger("entry", {"connection": "local"}) is False
+        factory.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_missing_serial_returns_false_without_creating_charger(self):
+        import sys
+        from unittest import mock
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        factory = mock.MagicMock()
+        with mock.patch.object(utils.wattpilot, "Wattpilot", factory, create=True):
+            assert await utils.async_ConnectCharger("entry", {"connection": "cloud"}) is False
+        factory.assert_not_called()

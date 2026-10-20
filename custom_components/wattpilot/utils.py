@@ -286,10 +286,16 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         con = data.get(CONF_CONNECTION,CONF_LOCAL)
         if charger is None and con == CONF_LOCAL:
             id = data.get(CONF_IP_ADDRESS, None)
+            if not id:
+                _LOGGER.error("%s - async_ConnectCharger: No ip address in configuration - reconfigure the integration", entry_or_device_id)
+                return False
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by ip: %s", entry_or_device_id, CONF_LOCAL, id)     
             charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=False)
         elif charger is None and con == CONF_CLOUD:
             id = data.get(CONF_SERIAL, None)
+            if not id:
+                _LOGGER.error("%s - async_ConnectCharger: No serial number in configuration - reconfigure the integration", entry_or_device_id)
+                return False
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by serial: %s", entry_or_device_id, CONF_CLOUD, id)     
             charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True)
         elif charger is not None:
