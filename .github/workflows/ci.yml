@@ -68,7 +68,36 @@ jobs:
         run: pytest tests/ -v --tb=short
 
   # -------------------------------------------------------------------------
-  # 4. HA compatibility check
+  # 4. Flow tests against a real Home Assistant core
+  #    Runs config entry setup and the options flow with the HA version that
+  #    pytest-homeassistant-custom-component pins (no real charger required).
+  # -------------------------------------------------------------------------
+  ha-flow-tests:
+    name: HA Flow Tests (real Home Assistant core)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest-homeassistant-custom-component \
+            bcrypt \
+            websocket-client \
+            "pyyaml>=5.3.0" \
+            "aiofiles>=23.2.1"
+
+      - name: Run flow tests
+        run: pytest tests_ha/ -v --tb=short
+
+  # -------------------------------------------------------------------------
+  # 5. HA compatibility check
   #    Installs the latest stable Home Assistant and verifies the integration
   #    can be imported cleanly (no syntax errors, no import-time crashes).
   # -------------------------------------------------------------------------
