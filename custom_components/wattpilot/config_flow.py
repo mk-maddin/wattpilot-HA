@@ -169,7 +169,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             OPTIONS_LOCAL_SCHEMA=await async_get_OPTIONS_LOCAL_SCHEMA(self._config_entry.data)
             if not user_input:
                 return self.async_show_form(step_id="config_local", data_schema=OPTIONS_LOCAL_SCHEMA)
-            _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local - user_input", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
+            _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local - user_input: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
             user_input[CONF_CONNECTION] = CONF_LOCAL
             self.data.update(user_input)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local complete: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
