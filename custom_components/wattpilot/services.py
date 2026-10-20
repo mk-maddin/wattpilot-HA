@@ -77,7 +77,7 @@ async def async_service_SetNextTrip(hass: HomeAssistant, call: ServiceCall) -> N
             _LOGGER.debug("%s - async_service_SetNextTrip: apply daylight saving time", DOMAIN)
             timestamp = timestamp + 3600
 
-        _LOGGER.debug("%s - async_service_SetNextTrip: set nexttrip timesamp %s for charger: %s", DOMAIN, charger.name)
+        _LOGGER.debug("%s - async_service_SetNextTrip: set nexttrip timesamp %s for charger: %s", DOMAIN, timestamp, charger.name)
         await async_SetChargerProp(charger,'ftt',timestamp)
 
     except Exception as e:
