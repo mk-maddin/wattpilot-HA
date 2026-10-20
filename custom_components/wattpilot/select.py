@@ -97,6 +97,8 @@ class ChargerSelect(ChargerPlatformEntity, SelectEntity):
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for select specific requirements"""
         try:
+            if state == "" and self._entity_cfg.get('empty_state', None) in self._opt_dict:
+                state = self._entity_cfg.get('empty_state')
             if state in list(self._opt_dict.keys()):
                 state = self._opt_dict[state]
             elif state in list(self._opt_dict.values()):

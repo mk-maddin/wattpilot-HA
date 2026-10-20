@@ -296,6 +296,9 @@ For Wattpilot JSON export files, perform exhaustive property analysis programmat
 2. Name the affected files and briefly justify each planned change.
 3. Implement the smallest working solution.
 4. Add or update tests if a test structure exists in the repository.
+   - `tests/` stubs Home Assistant and runs offline and fast. `tests_ha/` runs config entry setup and the options flow against a real Home Assistant core via `pytest-homeassistant-custom-component` (CI job "HA Flow Tests").
+   - Keep real-Home-Assistant tests in `tests_ha/`, never in `tests/`.
+     - `tests/conftest.py` replaces the `homeassistant` modules in `sys.modules`; real-Home-Assistant tests collected below it would silently run against the stubs or fail on import.
 5. Verify at least:
    - Syntax and imports
    - Async behaviour
@@ -306,6 +309,9 @@ For Wattpilot JSON export files, perform exhaustive property analysis programmat
 6. Document the commands actually executed for testing and verification, together with their results.
    - Clearly identify checks that were not run and explain why.
    - Recorded commands and results make verification reproducible and clearly distinguish tested behaviour from assumptions.
+   - Run the tests with the same flags as CI (`pytest tests/ -v --tb=short`, and `pytest tests_ha/ -v --tb=short` for the real Home Assistant tests). Do not disable log output with `-o log_cli=false` or `-q` alone when verifying.
+     - Traced failure: the options flow test passed locally with `-o log_cli=false` but failed in CI. A `_LOGGER.debug` call without a placeholder for its argument only raises a `TypeError` when the log record is actually formatted, which happens only with the CI log settings. The generic exception handler of the flow then aborted it with "exception".
+     - `tests/test_logging_format.py` now checks all `_LOGGER` calls statically. Keep every `_LOGGER` call's placeholders and arguments in sync.
 7. Do not claim that a change works unless it has been run and verified.
    - State plainly what was verified, what was assumed and what could not be checked.
    - If verification requires a real Fronius/SolarWeb account, Wattpilot device or unavailable hardware, state that limitation rather than implying coverage.

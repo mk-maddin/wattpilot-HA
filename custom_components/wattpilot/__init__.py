@@ -56,7 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     charger = None
     try: 
         _LOGGER.debug("%s - async_setup_entry: Connecting charger", entry.entry_id)
-        charger = await async_ConnectCharger(entry.entry_id, entry.data)
+        config = {**entry.data, **entry.options}
+        charger = await async_ConnectCharger(entry.entry_id, config)
         # not ready rather than failed, so HA retries instead of giving up -
         # after a power cut HA boots before the charger does
         if charger == False:
@@ -75,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].setdefault(entry.entry_id, {})
         entry_data=hass.data[DOMAIN][entry.entry_id]
         entry_data[CONF_CHARGER]=charger
-        entry_data[CONF_PARAMS]=entry.data
+        entry_data[CONF_PARAMS]=config
         entry_data[CONF_DBG_PROPS]=False
         entry_data.setdefault(CONF_PUSH_ENTITIES, {})
     except Exception as e:
@@ -147,8 +148,11 @@ async def options_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> No
         hass.data[DOMAIN].setdefault(entry.entry_id, {})
         entry_data=hass.data[DOMAIN][entry.entry_id]
         _LOGGER.debug("%s - options_update_listener: set new options", entry.entry_id)
-        entry_data[CONF_PARAMS]=entry.options
-        hass.config_entries.async_update_entry(entry, data=entry.options)
+        if entry.options:
+            entry_data[CONF_PARAMS]=entry.options
+            hass.config_entries.async_update_entry(entry, data=entry.options)
+        else:
+            _LOGGER.warning("%s - options_update_listener: options are empty - keep existing config data", entry.entry_id)
         _LOGGER.debug("%s - options_update_listener: async_reload entry", entry.entry_id)
         await hass.config_entries.async_reload(entry.entry_id)
     except Exception as e:

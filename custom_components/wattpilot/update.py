@@ -182,7 +182,7 @@ class ChargerUpdate(ChargerPlatformEntity, UpdateEntity):
             if self._charger.connected:
                 _LOGGER.error("%s - %s: async_install: update timeout during update install: %s seconds", self._charger_id, self._identifier, timeout)
                 return None
-            _LOGGER.debug("%s - %s: async_install: charger disconnected - waiting for reconnect", self._charger_id, self._identifier, timeout)
+            _LOGGER.debug("%s - %s: async_install: charger disconnected - waiting for reconnect (timeout: %s seconds)", self._charger_id, self._identifier, timeout)
             timer=0
             while timeout > timer and not self._charger.connected:
                 await asyncio.sleep(1)

@@ -169,7 +169,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             OPTIONS_LOCAL_SCHEMA=await async_get_OPTIONS_LOCAL_SCHEMA(self._config_entry.data)
             if not user_input:
                 return self.async_show_form(step_id="config_local", data_schema=OPTIONS_LOCAL_SCHEMA)
-            _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local - user_input", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
+            _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local - user_input: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
             user_input[CONF_CONNECTION] = CONF_LOCAL
             self.data.update(user_input)
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_config_local complete: %s", DOMAIN, async_redact_data(user_input, REDACT_CONFIG))
@@ -199,9 +199,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         try:        
             _LOGGER.debug("%s - OptionsFlowHandler: async_step_final", DOMAIN)
             title=self.data.get(CONF_FRIENDLY_NAME, self.data.get(CONF_IP_ADDRESS, DEFAULT_NAME))        
-            if self._config_entry.state is config_entries.ConfigEntryState.SETUP_ERROR:
-                _LOGGER.debug("%s - OptionsFlowHandler: in errorstate - trigger execution of options_update_listener", DOMAIN)
-                await options_update_listener(self.hass, self._config_entry)                
+            if self._config_entry.state in (config_entries.ConfigEntryState.SETUP_ERROR, config_entries.ConfigEntryState.SETUP_RETRY):
+                _LOGGER.debug("%s - OptionsFlowHandler: in error or retry state - save config and reload entry", DOMAIN)
+                self.hass.config_entries.async_update_entry(self._config_entry, data=self.data, options=self.data)
+                self.hass.async_create_task(self.hass.config_entries.async_reload(self._config_entry.entry_id))
             return self.async_create_entry(title=title, data=self.data)
         except Exception as e:
             _LOGGER.error("%s - OptionsFlowHandler: async_step_final failed: %s (%s.%s)", DOMAIN, str(e), e.__class__.__module__, type(e).__name__)
