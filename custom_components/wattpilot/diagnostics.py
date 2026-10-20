@@ -27,7 +27,7 @@ from .utils import (
 )
 
 REDACT_CONFIG = {CONF_IP_ADDRESS, CONF_PASSWORD}
-REDACT_ALLPROPS = {'wifis', 'scan', 'data', 'dll', 'cak', 'ocppck', 'ocppcc', 'ocppsc' }
+REDACT_ALLPROPS = {'wifis', 'scan', 'data', 'dll', 'cak', 'ocppck', 'ocppcc', 'ocppsc', 'cards' }
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='diagnostics'
