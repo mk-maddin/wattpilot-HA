@@ -6,6 +6,7 @@ import threading
 import hmac
 import logging
 import base64
+import re
 import bcrypt
 
 from time import sleep
@@ -21,7 +22,13 @@ RECONNECT_SECONDS = 30
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
-__version__ = '0.2.2g'
+CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc')
+CONST_SECRET_PATTERN = re.compile(r'("(?:' + '|'.join(CONST_SECRET_PROPERTIES) + r')"\s*:\s*)"(?:[^"\\]|\\.)*"')
+__version__ = '0.2.2h'
+
+def _mask_secrets(message):
+    """Return the message with the values of secret properties replaced by ***."""
+    return CONST_SECRET_PATTERN.sub(r'\1"***"', str(message))
 
 class LoadMode():
     """Wrapper Class to represent the Load Mode of the Wattpilot"""
@@ -639,7 +646,8 @@ class Wattpilot(object):
     def __on_message(self, wsapp, message):
         ## called whenever a message through websocket is received
         try:
-            _LOGGER.debug("Message received: %s", message)
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                _LOGGER.debug("Message received: %s", _mask_secrets(message))
             msg=json.loads(message, object_hook=lambda d: SimpleNamespace(**d))
             if (msg.type == 'hello'):  # Hello Message -> Received upon connection before auth
                 self.__on_hello(msg)

@@ -207,3 +207,23 @@ class TestSelectEmptyState:
     async def test_known_key_still_mapped(self):
         entity = self._select({"empty_state": "default"})
         assert await entity._async_update_validate_platform_state("kiaSoul") == "Kia Soul"
+
+
+class TestPropertyDebugSecrets:
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("include", [True, ["cak"]])
+    async def test_cak_value_is_masked(self, include, caplog):
+        import sys
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        with caplog.at_level("WARNING"):
+            await utils.async_PropertyDebug("cak", "s3cr3t", include)
+        assert "s3cr3t" not in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_other_property_is_logged_with_value(self, caplog):
+        import sys
+        utils = sys.modules["custom_components.wattpilot.utils"]
+        with caplog.at_level("WARNING"):
+            await utils.async_PropertyDebug("car", "2", True)
+        assert "car => 2" in caplog.text

@@ -69,3 +69,32 @@ class TestOnMessage:
         msg = {"type": "deltaStatus", "status": {"car": 1}}
         wp._Wattpilot__on_message(None, json.dumps(msg))
         assert wp.connected is True
+
+
+class TestSecretMasking:
+
+    SECRET = "s3cr3t-api-key"
+
+    def test_cak_is_masked_in_message_log(self, wp, caplog):
+        msg = {"type": "deltaStatus", "status": {"cak": self.SECRET, "car": 1}}
+        with caplog.at_level("DEBUG"):
+            wp._Wattpilot__on_message(None, json.dumps(msg))
+        assert self.SECRET not in caplog.text
+        assert '"cak": "***"' in caplog.text
+        assert '"car": 1' in caplog.text
+
+    def test_all_secret_properties_are_masked(self, lib):
+        raw = json.dumps({"cak": "a", "ocppck": "b", "ocppcc": "c", "ocppsc": "d", "car": 1})
+        masked = lib._mask_secrets(raw)
+        assert all(v not in masked for v in ('"a"', '"b"', '"c"', '"d"'))
+        assert masked.count('"***"') == 4
+
+    def test_value_with_escaped_quote_is_masked_completely(self, lib):
+        raw = json.dumps({"cak": 'ab"cd', "car": 1})
+        masked = lib._mask_secrets(raw)
+        assert "ab" not in masked and "cd" not in masked
+
+    def test_masking_does_not_change_stored_value(self, wp):
+        msg = {"type": "deltaStatus", "status": {"cak": self.SECRET}}
+        wp._Wattpilot__on_message(None, json.dumps(msg))
+        assert wp.cak == self.SECRET
