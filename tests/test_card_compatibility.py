@@ -139,8 +139,8 @@ def test_sensor_polling_and_unique_ids_are_compatible(wp, caplog):
 
 
 def test_diagnostics_redaction_keys(monkeypatch):
-    stub = SimpleNamespace(async_redact_data=mock.Mock())
-    monkeypatch.setitem(sys.modules, "homeassistant.components.diagnostics", stub)
+    monkeypatch.setitem(sys.modules, "importlib_metadata", SimpleNamespace(version=mock.Mock()))
+    monkeypatch.setitem(sys.modules, "homeassistant.components.diagnostics", SimpleNamespace(async_redact_data=mock.Mock()))
     module = _load_file_as_module("custom_components/wattpilot/diagnostics.py", "custom_components.wattpilot.diagnostics")
     for index in range(10):
         assert f"c{index}n" in module.REDACT_ALLPROPS
