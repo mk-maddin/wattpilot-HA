@@ -163,7 +163,7 @@ class ChargerPlatformEntity(Entity):
             _LOGGER.error("%s - %s: _check_hw_typ_supported: Cannot identify charger hardware type", self._charger_id, self._identifier)
             return False
 
-        v = str(hw_typ) in supported_hw_types
+        v = str(hw_typ).casefold() in [ supported_hw_type.casefold() for supported_hw_type in supported_hw_types ]
         _LOGGER.debug("%s - %s: _check_hw_typ_supported complete (%s in %s -> %s)", self._charger_id, self._identifier, hw_typ, supported_hw_types, v)
         return v
 
