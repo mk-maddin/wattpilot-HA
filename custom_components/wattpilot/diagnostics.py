@@ -58,12 +58,12 @@ async def async_get_config_entry_diagnostics( hass: HomeAssistant, entry: Config
 
     try:
         _LOGGER.debug("%s - async_get_config_entry_diagnostics %s: Add python modules version", entry.entry_id, platform)
-        diag["wattpilot_module"] = version('wattpilot')
+        diag["wattpilot_module"] = await hass.async_add_executor_job(version, "wattpilot")
         diag["wattpilot_file"] = wattpilot.__file__
-        diag["pyyaml_module"] = version('pyyaml')
-        diag["importlib_metadata_module"] = version('importlib_metadata')
-        diag["aiofiles_module"] = version('aiofiles')
-        diag["packaging"] = version('packaging')
+        diag["pyyaml_module"] = await hass.async_add_executor_job(version, "pyyaml")
+        diag["importlib_metadata_module"] = await hass.async_add_executor_job(version, "importlib_metadata")
+        diag["aiofiles_module"] = await hass.async_add_executor_job(version, "aiofiles")
+        diag["packaging"] = await hass.async_add_executor_job(version, "packaging")
     except Exception as e:
         _LOGGER.error("%s - async_get_config_entry_diagnostics %s: Add python modules version failed: %s (%s.%s)", entry.entry_id, platform, str(e), e.__class__.__module__, type(e).__name__)
         return diag
