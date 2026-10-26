@@ -8,5 +8,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/mk-maddin/wattpilot-HA/issues",
   "requirements": ["wattpilot>=0.2", "importlib_metadata>=4.0.0", "aiofiles>=23.2.1"],
-  "version": "0.4.0"
+  "version": "0.4.1"
 }
