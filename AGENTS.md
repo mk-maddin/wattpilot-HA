@@ -130,6 +130,15 @@ However:
 - Do not implement such behaviour until it has also been approved by a human reviewer.
   - Reverse-engineered behaviour may vary by model or firmware; technical validation and human approval reduce the risk of unsafe or incorrect wallbox control.
 
+#### RFID Card Compatibility View
+
+- The internal client's `allProps` exposes a read-only `cards` compatibility view when flattened `c0n` through `c9i` fields are present and no native `cards` property exists. Preserve raw fields, slot indices and native legacy lists. Incomplete slots remain `None`.
+  - Existing chip entities use `cards_<index>` and polling. Replacing their identifiers or inventing missing energy values would break continuity or conceal incomplete data.
+- Do not send the derived `cards` view to the wallbox or assume that it emits property callbacks.
+  - The flattened protocol has no verified aggregate write operation; the compatibility view is assembled on access, not received as a property update.
+- Keep `setup.py`'s package version aligned with `__version__` and `PKG-INFO` when changing the internal package.
+  - The supplied files declared `0.2.2e` in `setup.py` and `0.2.2h` elsewhere. Builds would otherwise report a different version from the runtime package.
+
 ### 3.3 Entity Definitions
 
 Home Assistant entities are defined per platform in YAML files, referred to as `entities_cfg` files. Examples include:

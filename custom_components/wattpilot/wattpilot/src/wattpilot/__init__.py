@@ -22,9 +22,11 @@ RECONNECT_SECONDS = 30
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
-CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc')
+CONST_CARD_NAME_PROPERTIES = tuple(f'c{index}n' for index in range(10))
+CONST_CARD_FIELDS = {'n': 'name', 'e': 'energy', 'i': 'cardId'}
+CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc') + CONST_CARD_NAME_PROPERTIES
 CONST_SECRET_PATTERN = re.compile(r'("(?:' + '|'.join(CONST_SECRET_PROPERTIES) + r')"\s*:\s*)"(?:[^"\\]|\\.)*"')
-__version__ = '0.2.2h'
+__version__ = '0.2.2i'
 
 def _mask_secrets(message):
     """Return the message with the values of secret properties replaced by ***."""
@@ -94,6 +96,19 @@ class Wattpilot(object):
     @property
     def allProps(self):
         """Returns a dictionary with all properties"""
+        if "cards" in self._allProps:
+            return self._allProps
+        cards = []
+        has_card_fields = False
+        for index in range(10):
+            fields = {f"c{index}{suffix}": attribute for suffix, attribute in CONST_CARD_FIELDS.items()}
+            has_card_fields = has_card_fields or any(key in self._allProps for key in fields)
+            if all(key in self._allProps and self._allProps[key] is not None for key in fields):
+                cards.append(SimpleNamespace(**{attribute: self._allProps[key] for key, attribute in fields.items()}))
+            else:
+                cards.append(None)
+        if has_card_fields:
+            return {**self._allProps, "cards": cards}
         return self._allProps
 
     @property
@@ -373,6 +388,8 @@ class Wattpilot(object):
 
 
     def send_update(self,name,value):
+        if name == "cards" and "cards" not in self._allProps and "cards" in self.allProps:
+            raise ValueError("The compatibility cards view is read-only")
         message = {}
         message["type"]="setValue"
         self.__requestid = self.__requestid+1

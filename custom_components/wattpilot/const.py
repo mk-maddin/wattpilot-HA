@@ -26,3 +26,5 @@ EVENT_PROPS: Final = ["ftt", "cak"]
 
 CLOUD_API_URL_PREFIX: Final = 'https://'
 CLOUD_API_URL_POSTFIX: Final = '.api.v3.go-e.io/api/'
+
+CARD_NAME_PROPERTIES: Final = frozenset(f"c{index}n" for index in range(10))
