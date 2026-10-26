@@ -1,10 +1,13 @@
 """Tests for entities.py — ChargerPlatformEntity base class."""
 
 from __future__ import annotations
+import asyncio
 import unittest.mock as mock
 import pytest
 
 from tests.conftest import ChargerPlatformEntity, MockCharger, MockChargerMissingProps
+
+import custom_components.wattpilot.entities as entities_module
 
 STATE_UNKNOWN = "unknown"
 
@@ -24,6 +27,10 @@ def _make_entry(name="TestCharger"):
     entry.data = {"friendly_name": name, "host": "192.168.1.1", "params": {}}
     entry.entry_id = "test_entry_id"
     return entry
+
+
+def _run(coro):
+    return asyncio.run(coro)
 
 
 def _entity(cfg, charger=None):
@@ -159,3 +166,56 @@ class TestMissingOptionalProperties:
         e = _entity({"id": prop_id, "source": "property", "name": prop_id.upper()},
                     charger_no_optional)
         assert e._init_failed is True
+
+
+# ---------------------------------------------------------------------------
+# Issue #144 regression — push/poll must not run on entities that have no hass
+# ---------------------------------------------------------------------------
+
+class TestPushGuardForNeverAddedEntity:
+    """An entity disabled via ``enabled: False`` is aborted by Home Assistant
+    with ``add_to_platform_abort()``, which leaves ``hass`` as None and never
+    assigns ``registry_entry``. ``Entity.enabled`` returns True whenever
+    ``registry_entry`` is None, so the enabled check alone lets the push
+    through and ``async_write_ha_state()`` then raises every time the charger
+    pushes a value."""
+
+    CFG = {"id": "rbt", "source": "property", "name": "Reboot Timer"}
+
+    def test_push_does_not_write_state_when_hass_is_none(self, charger):
+        e = _entity(self.CFG, charger)
+        e.hass = None
+        e.async_write_ha_state = mock.MagicMock()
+        assert e.enabled is True
+        _run(e.async_local_push(1234))
+        e.async_write_ha_state.assert_not_called()
+
+    def test_poll_does_not_write_state_when_hass_is_none(self, charger):
+        e = _entity(self.CFG, charger)
+        e.hass = None
+        e.async_write_ha_state = mock.MagicMock()
+        _run(e.async_local_poll())
+        e.async_write_ha_state.assert_not_called()
+
+    def test_push_does_not_log_an_error_when_hass_is_none(self, charger):
+        """Real Home Assistant raises RuntimeError("Attribute hass is None")
+        from async_write_ha_state() when hass is None, which the integration
+        then logs once per pushed value."""
+        e = _entity(self.CFG, charger)
+        e.hass = None
+        e.async_write_ha_state = mock.MagicMock(
+            side_effect=RuntimeError("Attribute hass is None for <entity unknown.unknown=unknown>")
+        )
+        with mock.patch.object(entities_module._LOGGER, "error") as err:
+            _run(e.async_local_push(1234))
+        err.assert_not_called()
+
+    def test_push_still_writes_state_for_an_added_entity(self, charger):
+        """Guard must not suppress updates for normally added entities."""
+        e = _entity({"id": "car", "source": "property", "name": "Car"}, charger)
+        if e._init_failed:
+            pytest.skip("entity did not initialise")
+        e.async_write_ha_state = mock.MagicMock()
+        assert e.hass is not None
+        _run(e.async_local_push(2))
+        e.async_write_ha_state.assert_called_once()
