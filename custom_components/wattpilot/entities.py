@@ -370,6 +370,8 @@ class ChargerPlatformEntity(Entity):
     async def async_local_poll(self) -> None:
         """Async: Poll the latest data and states from the entity."""
         try:
+            if self.hass is None or not self.enabled:
+                return None
             _LOGGER.debug("%s - %s: async_local_poll", self._charger_id, self._identifier)
             if self._source == 'attribute':
                 state = getattr(self._charger,self._identifier,self._default_state)
@@ -395,7 +397,7 @@ class ChargerPlatformEntity(Entity):
     async def async_local_push(self, state=None, initwait=False) -> None:
         """Async: Get the latest status from the entity after an update was pushed"""
         try:
-            if not self.enabled:
+            if self.hass is None or not self.enabled:
                 return None
             _LOGGER.debug("%s - %s: async_local_push", self._charger_id, self._identifier)
             if self._source == 'attribute':
