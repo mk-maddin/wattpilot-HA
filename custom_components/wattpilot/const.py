@@ -20,6 +20,7 @@ CONF_PUSH_ENTITIES: Final = 'push_entities'
 CONF_SERIAL: Final = 'serial'
 
 DEFAULT_TIMEOUT: Final = 15
+ATTR_ONLY_WRITE_INTERVAL: Final = 60
 
 EVENT_PROPS_ID: Final = DOMAIN + '_property_message'
 EVENT_PROPS: Final = ["ftt", "cak"]

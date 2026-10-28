@@ -198,6 +198,8 @@ Follow Home Assistant conventions and current Python best practices:
 - Place constants for the Home Assistant integration in `custom_components/wattpilot/const.py`.
   - A central constants module prevents duplicated definitions, keeps shared integration values discoverable and maintains the repository's established module structure.
 - Write every `_LOGGER` call on a single line. Do not split `_LOGGER` calls across multiple lines.
+- Write entity state through `ChargerPlatformEntity._write_state()`, not `async_write_ha_state()` directly, in push and poll paths.
+  - The charger pushes some properties about once per second even when the state is unchanged (e.g. `nrg` per-phase voltages while idle at 0 W). Every write bumps `last_updated`, and the recorder stores a states row for it even when all attributes are unrecorded. Charging Power alone wrote ~86,000 rows per day on one install before `_write_state()` limited attribute-only writes to one per `ATTR_ONLY_WRITE_INTERVAL`.
 
 ### 4.4 Compatibility, Safety and Behaviour
 

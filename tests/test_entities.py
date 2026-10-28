@@ -219,3 +219,36 @@ class TestPushGuardForNeverAddedEntity:
         assert e.hass is not None
         _run(e.async_local_push(2))
         e.async_write_ha_state.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Recorder load — attribute-only updates are throttled
+# ---------------------------------------------------------------------------
+
+class TestAttributeOnlyWriteThrottle:
+    """Charging Power pushes new per-phase voltages ~1/s while idle at 0 W.
+    Each write bumps last_updated and costs a recorder row, so writes where
+    only attributes changed are limited to one per interval."""
+
+    CFG = {"id": "car", "source": "property", "name": "CarState"}
+
+    def _counting_entity(self, charger):
+        e = _entity(self.CFG, charger)
+        e.async_write_ha_state = mock.MagicMock()
+        return e
+
+    def test_unchanged_state_written_once_per_interval(self, charger):
+        e = self._counting_entity(charger)
+        with mock.patch.object(entities_module, "time") as clock:
+            clock.monotonic.side_effect = [0, 1, 2, 61]
+            for _ in range(4):
+                _run(e.async_local_push(0))
+        assert e.async_write_ha_state.call_count == 2
+
+    def test_changed_state_always_written(self, charger):
+        e = self._counting_entity(charger)
+        with mock.patch.object(entities_module, "time") as clock:
+            clock.monotonic.side_effect = [0, 1, 2]
+            for value in (0, 1, 2):
+                _run(e.async_local_push(value))
+        assert e.async_write_ha_state.call_count == 3
