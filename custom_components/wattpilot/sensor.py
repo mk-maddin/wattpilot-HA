@@ -86,6 +86,9 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
     def _init_platform_specific(self):
         """Platform specific init actions"""
         self._attr_native_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
+        if self._attr_native_unit_of_measurement is not None:
+            self._attr_native_value = None
+            self._default_state = None
         if (not (unit_converter := UNIT_CONVERTERS.get(self._attr_device_class)) is None and self._attr_native_unit_of_measurement in unit_converter.VALID_UNITS):
             self._attr_suggested_unit_of_measurement = self._entity_cfg.get('unit_of_measurement', None)
         if not self._entity_cfg.get('state_class', None) is None:
@@ -94,6 +97,12 @@ class ChargerSensor(ChargerPlatformEntity, SensorEntity):
            self._state_enum = dict(self._entity_cfg.get('enum', None))
         if not self._entity_cfg.get('html_unescape', None) is None:
            self._html_unescape = True
+
+    @property
+    def should_poll(self) -> bool:
+        if self._attr_native_unit_of_measurement is not None and self._attr_native_value is None:
+            return True
+        return super().should_poll
 
     async def _async_update_validate_platform_state(self, state=None):
         """Async: Validate the given state for sensor specific requirements"""
