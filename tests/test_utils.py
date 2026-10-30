@@ -68,31 +68,56 @@ class TestPropertyUpdateHandler:
         hass = mock.MagicMock()
         hass.is_stopping = stopping
         hass.loop.is_closed.return_value = closed
-        hass.data = {"wattpilot": {"entry": {}}}
+        hass.data = {"wattpilot": {"entry": {"push_entities": {}, "params": {}}}}
         return hass
 
     def test_returns_early_when_hass_is_stopping(self):
-        from unittest import mock
         utils = self._utils()
-        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
-            assert utils.PropertyUpdateHandler(self._hass(stopping=True), "entry", "car", 1) is None
-        run.assert_not_called()
+        hass = self._hass(stopping=True)
+        assert utils.PropertyUpdateHandler(hass, "entry", "car", 1) is None
+        hass.async_create_task.assert_not_called()
 
     def test_returns_early_when_loop_is_closed(self):
-        from unittest import mock
         utils = self._utils()
-        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe") as run:
-            assert utils.PropertyUpdateHandler(self._hass(closed=True), "entry", "car", 1) is None
-        run.assert_not_called()
+        hass = self._hass(closed=True)
+        assert utils.PropertyUpdateHandler(hass, "entry", "car", 1) is None
+        hass.async_create_task.assert_not_called()
 
-    def test_scheduling_error_returns_none_not_nameerror(self):
+    def test_property_update_for_unknown_entry_is_ignored(self):
+        utils = self._utils()
+        hass = self._hass()
+        hass.data = {"wattpilot": {}}
+        assert utils.PropertyUpdateHandler(hass, "missing_entry", "car", 1) is None
+        hass.async_create_task.assert_not_called()
+
+    def test_event_property_is_fired_on_the_bus(self):
+        utils = self._utils()
+        hass = self._hass()
+        utils.PropertyUpdateHandler(hass, "entry", "ftt", 3)
+        hass.bus.async_fire.assert_called_once()
+
+    def test_property_without_entity_creates_no_task(self):
+        utils = self._utils()
+        hass = self._hass()
+        utils.PropertyUpdateHandler(hass, "entry", "rbt", 12345)
+        hass.async_create_task.assert_not_called()
+        hass.bus.async_fire.assert_not_called()
+
+    def test_property_with_push_entity_is_pushed(self):
         from unittest import mock
         utils = self._utils()
-        with mock.patch.object(utils.asyncio, "run_coroutine_threadsafe", side_effect=RuntimeError("Event loop is closed")):
-            handler = mock.MagicMock()
-            with mock.patch.object(utils, "async_PropertyUpdateHandler", handler):
-                assert utils.PropertyUpdateHandler(self._hass(), "entry", "car", 1) is None
-            handler.return_value.close.assert_called_once()
+        hass = self._hass()
+        entity = mock.MagicMock()
+        hass.data["wattpilot"]["entry"]["push_entities"]["amp"] = entity
+        utils.PropertyUpdateHandler(hass, "entry", "amp", 16)
+        entity.async_local_push.assert_called_once_with(16)
+        hass.async_create_task.assert_called_once()
+
+    def test_handler_error_returns_none(self):
+        utils = self._utils()
+        hass = self._hass()
+        hass.loop.is_closed.side_effect = RuntimeError("boom")
+        assert utils.PropertyUpdateHandler(hass, "entry", "car", 1) is None
 
     @pytest.mark.asyncio
     async def test_async_handler_error_returns_none_not_nameerror(self):

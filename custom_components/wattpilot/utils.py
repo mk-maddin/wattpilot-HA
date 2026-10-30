@@ -104,24 +104,25 @@ def PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, v
         if hass.is_stopping or hass.loop.is_closed():
             return None
         #_LOGGER.debug("%s - PropertyUpdateHandler: 'self' execute async", entry_id)
-        if entry_id in hass.data[DOMAIN]:
-            coro = async_PropertyUpdateHandler(hass, entry_id, identifier, value)
-            try:
-                asyncio.run_coroutine_threadsafe(coro, hass.loop)
-            except Exception:
-                coro.close()
-                raise
+        _PropertyUpdate(hass, entry_id, identifier, value)
     except Exception as e:
-        _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - PropertyUpdateHandler: Could not handle property update: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return None
 
 
 async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
     """Asnyc: Watches on property updates and executes corresponding action"""
+    _PropertyUpdate(hass, entry_id, identifier, value)
+
+
+def _PropertyUpdate(hass: HomeAssistant, entry_id: str, identifier: str, value: str) -> None:
+    """Handle a property update in the event loop"""
     try:
         #_LOGGER.debug("%s - async_PropertyUpdateHandler: get entry_data", entry_id)
-        entry_data=hass.data[DOMAIN][entry_id]
-       
+        entry_data = hass.data[DOMAIN].get(entry_id, None)
+        if entry_data is None:
+            return None
+
         if identifier == wattpilot.CONST_CONNECTION_SENTINEL:
             # push entities never write state while the socket is down, so
             # available() would not be re-evaluated without this
@@ -130,11 +131,11 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
                     push_entity.async_write_ha_state()
                 except Exception as e:
                     _LOGGER.debug("%s - async_PropertyUpdateHandler: connection refresh skipped an entity: %s", entry_id, str(e))
-            return
+            return None
 
-        entity=entry_data[CONF_PUSH_ENTITIES].get(identifier, None)
+        entity=entry_data.get(CONF_PUSH_ENTITIES, {}).get(identifier, None)
         if not entity is None:
-            hass.async_create_task(entity.async_local_push(value))
+            hass.async_create_task(entity.async_local_push(value), eager_start=True)
 
         if identifier in EVENT_PROPS:
             charger_id = str(entry_data[CONF_PARAMS].get(CONF_FRIENDLY_NAME, entry_data[CONF_PARAMS].get(CONF_IP_ADDRESS, DEFAULT_NAME)))
@@ -144,12 +145,12 @@ async def async_PropertyUpdateHandler(hass: HomeAssistant, entry_id: str, identi
               "property": identifier,
               "value": value
                     }
-            hass.bus.fire(EVENT_PROPS_ID,data)
+            hass.bus.async_fire(EVENT_PROPS_ID,data)
 
         if entry_data.get(CONF_DBG_PROPS, False):
             hass.async_create_task(async_PropertyDebug(identifier, value, entry_data.get(CONF_DBG_PROPS)))
     except Exception as e:
-        _LOGGER.error("%s - PropertyUpdateHandler: Could not 'self' execute async: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
+        _LOGGER.error("%s - async_PropertyUpdateHandler: Could not handle property update: %s (%s.%s)", entry_id, str(e), e.__class__.__module__, type(e).__name__)
         return None
 
 
@@ -223,8 +224,11 @@ async def async_SetChargerProp(charger, identifier:str=None, value:str=None, for
             v=str(value)
 
         _LOGGER.debug("%s - async_SetChargerProp: Send property update to charger: %s=%s", DOMAIN, identifier, v)
-        charger.send_update(identifier,v)
-        await asyncio.sleep(0)
+        if hasattr(charger, 'async_send_update') and callable(charger.async_send_update):
+            await charger.async_send_update(identifier,v)
+        else:
+            charger.send_update(identifier,v)
+            await asyncio.sleep(0)
         return True
     except Exception as e:
         _LOGGER.error("%s - async_SetChargerProp: Could not set property %s: %s (%s.%s)", DOMAIN, identifier, str(e), e.__class__.__module__, type(e).__name__)
@@ -282,7 +286,7 @@ async def async_GetChargerFromDeviceID(hass: HomeAssistant, device_id: str):
         return False
 
 
-async def async_ConnectCharger(entry_or_device_id, data, charger=None):
+async def async_ConnectCharger(entry_or_device_id, data, charger=None, session=None):
     """Async: connect charger and handle connection errors"""
     created = charger is None
     try:
@@ -293,14 +297,14 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
                 _LOGGER.error("%s - async_ConnectCharger: No ip address in configuration - reconfigure the integration", entry_or_device_id)
                 return False
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by ip: %s", entry_or_device_id, CONF_LOCAL, id)     
-            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=False)
+            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=False, session=session)
         elif charger is None and con == CONF_CLOUD:
             id = data.get(CONF_SERIAL, None)
             if not id:
                 _LOGGER.error("%s - async_ConnectCharger: No serial number in configuration - reconfigure the integration", entry_or_device_id)
                 return False
             _LOGGER.debug("%s - async_ConnectCharger: Connecting %s charger by serial: %s", entry_or_device_id, CONF_CLOUD, id)     
-            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True)
+            charger=wattpilot.Wattpilot(ip=id, password=data.get(CONF_PASSWORD, None), serial=id, cloud=True, session=session)
         elif charger is not None:
             _LOGGER.debug("%s - async_ConnectCharger: Reconnect existing charger: %s", entry_or_device_id, charger.name)
             id = charger.name
@@ -318,7 +322,12 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
         timer=0
         timeout=data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
         while timeout > timer and not (charger.connected and charger.allPropsInitialized):
-            await asyncio.sleep(1)
+            try:
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                if created:
+                    charger.disconnect()
+                raise
             timer+=1
         if not charger.connected:
             _LOGGER.error("%s - async_ConnectCharger: Timeout - charger not connected: %s (%s sec)", entry_or_device_id, charger.connected, timeout)
@@ -349,8 +358,10 @@ async def async_ConnectCharger(entry_or_device_id, data, charger=None):
 async def async_DisconnectCharger(entry_or_device_id, charger):
     """Async: disconnect charger and handle connection errors"""
     try:
-        _LOGGER.debug("%s - async_DisconnectCharger: disconnect charger: %s", entry_or_device_id, charger)
-        if hasattr(charger, 'disconnect') and callable(charger.disconnect):
+        _LOGGER.debug("%s - async_DisconnectCharger: disconnect charger: %s", entry_or_device_id, getattr(charger, 'name', None))
+        if hasattr(charger, 'async_disconnect') and callable(charger.async_disconnect):
+            await charger.async_disconnect()
+        elif hasattr(charger, 'disconnect') and callable(charger.disconnect):
             charger.disconnect()
         else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
             charger._wsapp.close()

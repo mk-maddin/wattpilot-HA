@@ -10,6 +10,7 @@ import time
 import datetime
 
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from homeassistant.const import (
     CONF_API_KEY,
@@ -211,7 +212,7 @@ async def async_service_ReConnectCharger(hass: HomeAssistant, call: ServiceCall)
             await asyncio.sleep(1)
 
         _LOGGER.debug("%s - async_service_ReConnectCharger: Connecting charger", DOMAIN)
-        charger = await async_ConnectCharger(device_id, entry_data[CONF_PARAMS], charger)
+        charger = await async_ConnectCharger(device_id, entry_data[CONF_PARAMS], charger, session=async_get_clientsession(hass))
         if charger == False: return False
         _LOGGER.info("%s - async_service_ReConnectCharger: Charger reconnected: %s", DOMAIN, charger.name)
         return True
@@ -236,7 +237,9 @@ async def async_service_DisconnectCharger(hass: HomeAssistant, call: ServiceCall
             _LOGGER.error("%s - async_service_DisconnectCharger: unable to get charger for: %s", DOMAIN, CONF_DEVICE_ID)
             return False
 
-        if hasattr(charger, 'disconnect') and callable(charger.disconnect):
+        if hasattr(charger, 'async_disconnect') and callable(charger.async_disconnect):
+            await charger.async_disconnect()
+        elif hasattr(charger, 'disconnect') and callable(charger.disconnect):
             charger.disconnect()
         else: #workaround unitl wattpilot python package > 0.2 with built in disconnect is released
             charger._wsapp.close()

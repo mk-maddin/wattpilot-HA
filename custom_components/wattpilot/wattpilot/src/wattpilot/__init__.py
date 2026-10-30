@@ -1,15 +1,14 @@
-import websocket
+import aiohttp
+import asyncio
 import json
 import hashlib
 import random
-import threading
 import hmac
 import logging
 import base64
 import re
 import bcrypt
 
-from time import sleep
 from types import SimpleNamespace
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,12 +18,14 @@ CONST_HASH_BCRYPT = 'bcrypt'
 CONST_WPFLEX_DEVICETYPE='wattpilot_flex'
 
 RECONNECT_SECONDS = 30
+CONST_RECEIVE_TIMEOUT_SECONDS = 120
+CONST_CONNECT_TIMEOUT_SECONDS = 10
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
 CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc')
 CONST_SECRET_PATTERN = re.compile(r'("(?:' + '|'.join(CONST_SECRET_PROPERTIES) + r')"\s*:\s*)"(?:[^"\\]|\\.)*"')
-__version__ = '0.2.2h'
+__version__ = '0.2.2i'
 
 def _mask_secrets(message):
     """Return the message with the values of secret properties replaced by ***."""
@@ -35,6 +36,95 @@ class LoadMode():
     DEFAULT=3
     ECO=4
     NEXTTRIP=5
+
+
+def _namespace(value):
+    """Return JSON objects as SimpleNamespace, as the property values have always been."""
+    if isinstance(value, dict):
+        return SimpleNamespace(**{k: _namespace(v) for k, v in value.items()})
+    if isinstance(value, list) and any(isinstance(v, (dict, list)) for v in value):
+        return [_namespace(v) for v in value]
+    return value
+
+
+def _hash_password(password, serial, hashtype):
+    """Return the hashed password the charger expects; CPU heavy, run it in an executor."""
+    if hashtype == CONST_HASH_PBKDF2:
+        return base64.b64encode(hashlib.pbkdf2_hmac('sha512', password.encode(), serial.encode(), 100000, 256))[:32]
+    if hashtype == CONST_HASH_BCRYPT:
+        return _bcrypt_hash_password(password, serial).encode()
+    raise ValueError("unknown authhashtype: %s" % hashtype)
+
+
+def _bcryptjs_base64_encode(b: bytes, length: int) -> str:
+    #manual implementation of javascript bcrypt.encodeBase64 function
+    #encodeBase64 from https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L1133C17-L1133C29
+    #base64_encode from https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L427
+    #BASE64_CODE from: https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L402C1-L403C80
+    BASE64_CODE = list("./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+    off = 0
+    rs = []
+
+    if length <= 0 or length > len(b):
+        raise ValueError(f"Illegal len: {length}")
+
+    while off < length:
+        c1 = b[off] & 0xff
+        off += 1
+        rs.append(BASE64_CODE[(c1 >> 2) & 0x3f])
+        c1 = (c1 & 0x03) << 4
+        if off >= length:
+            rs.append(BASE64_CODE[c1 & 0x3f])
+            break
+
+        c2 = b[off] & 0xff
+        off += 1
+        c1 |= (c2 >> 4) & 0x0f
+        rs.append(BASE64_CODE[c1 & 0x3f])
+        c1 = (c2 & 0x0f) << 2
+        if off >= length:
+            rs.append(BASE64_CODE[c1 & 0x3f])
+            break
+
+        c2 = b[off] & 0xff
+        off += 1
+        c1 |= (c2 >> 6) & 0x03
+        rs.append(BASE64_CODE[c1 & 0x3f])
+        rs.append(BASE64_CODE[c2 & 0x3f])
+
+    return "".join(rs)
+
+
+def _bcryptjs_encodeBase64(s: str, length: int) -> str:
+    #helper wrapper function for _bcryptjs_base64_encode
+    #ensures python & java encoding is handled equally
+    if s.isdigit(): #numeric only serial
+        vals = [ord(ch) - ord('0') for ch in s]
+        b = bytes([0] * (length - len(vals)) + vals)
+    else: #not sure about serials in future - fallback
+        _LOGGER.error("_bcryptjs_encodeBase64: check serial string - should be digits only: %s", s)
+        raise ValueError(f"Check serial string - should be digits only: %s", s)
+    return _bcryptjs_base64_encode(b,length)
+
+
+def _bcrypt_hash_password(password,serial,iterations=8) -> str:
+    #hash bassword bcrypt / wattpilot flex compatible
+    password_hash_sha256 = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    serial_b64 = _bcryptjs_encodeBase64(serial, 16)
+    salt = []
+    salt.append("$2a$")
+    if (iterations < 10):
+        salt.append("0")
+    salt.append(str(iterations))
+    salt.append("$")
+    salt.append(serial_b64)
+    salt=''.join(salt)
+    bsalt = salt.encode("utf-8")
+    bpassword = password_hash_sha256.encode('utf-8')
+    pwhash = bcrypt.hashpw(bpassword, bsalt)
+    salt_length = len(salt)
+    pwhash_sub = pwhash[salt_length:].decode('ascii')
+    return pwhash_sub
 
 
 def _translate(table, value):
@@ -141,8 +231,6 @@ class Wattpilot(object):
     @serial.setter
     def serial(self,value):
         self._serial = value
-        if (self._password is not None) & (self._serial is not None):
-            self.__update_hashedpassword(self._password,self._serial)
            
     @property
     def name(self):
@@ -183,8 +271,6 @@ class Wattpilot(object):
     @password.setter
     def password(self,value):
         self._password = value
-        if (self._password is not None) & (self._serial is not None):
-            self.__update_hashedpassword(self._password,self._serial)
 
 
     @property
@@ -309,38 +395,88 @@ class Wattpilot(object):
 
         return ret
     def connect(self):
-        """Start the websocket and reconnect whenever it drops."""
+        """Start the websocket task on the running event loop; it reconnects whenever the socket drops."""
+        if self._task is not None and not self._task.done():
+            self._task.cancel()
         self._stop = False
-
-        def _supervise():
-            while not self._stop:
-                try:
-                    try:
-                        self._wsapp.run_forever(reconnect=RECONNECT_SECONDS)
-                    except TypeError:
-                        # websocket-client < 1.3.2 has no reconnect kwarg
-                        self._wsapp.run_forever()
-                except Exception as e:
-                    _LOGGER.warning("connect: websocket loop raised %s (%s)", str(e), type(e).__name__)
-                if self._stop:
-                    break
-                self._set_disconnected()
-                _LOGGER.warning("connect: websocket closed, reconnecting in %s seconds", RECONNECT_SECONDS)
-                sleep(RECONNECT_SECONDS)
-
-        self._wst = threading.Thread(target=_supervise, name='wattpilot-ws-supervisor', daemon=True)
-        self._wst.start()
-        _LOGGER.info("connect: Wattpilot connected")
+        self._task = asyncio.get_running_loop().create_task(self._run(), name="wattpilot websocket")
+        _LOGGER.info("connect: Wattpilot connecting")
 
     def disconnect(self):
         """Close the socket and stop reconnecting."""
         self._stop = True
-        try:
-            self._wsapp.close()
-        except Exception as e:
-            _LOGGER.debug("disconnect: closing websocket failed: %s", str(e))
+        if self._task is not None and not self._task.done():
+            self._task.cancel()
+        for task in list(self._send_tasks):
+            task.cancel()
         self._set_disconnected()
         _LOGGER.info("disconnect: Wattpilot disconnected")
+
+    async def async_disconnect(self):
+        """Close the socket, stop reconnecting and wait until the websocket task has ended."""
+        task = self._task
+        self.disconnect()
+        if task is not None:
+            try:
+                await task
+            except asyncio.CancelledError:
+                current = asyncio.current_task()
+                if current is not None and current.cancelling():
+                    raise
+
+    async def _run(self):
+        session = self._session
+        own_session = session is None
+        try:
+            if own_session:
+                session = aiohttp.ClientSession()
+            while not self._stop and not session.closed:
+                ws = None
+                try:
+                    async with asyncio.timeout(CONST_CONNECT_TIMEOUT_SECONDS):
+                        ws = await session.ws_connect(self._url, origin=self._origin)
+                    try:
+                        self._wsapp = ws
+                        self._close_requested = False
+                        await self._receive(ws)
+                    finally:
+                        await ws.close()
+                except asyncio.CancelledError:
+                    raise
+                except TimeoutError:
+                    if ws is None:
+                        _LOGGER.warning("connect: charger did not answer within %s seconds", CONST_CONNECT_TIMEOUT_SECONDS)
+                    else:
+                        _LOGGER.warning("connect: no message from the charger for %s seconds", CONST_RECEIVE_TIMEOUT_SECONDS)
+                    self._set_disconnected()
+                except Exception as e:
+                    _LOGGER.warning("connect: websocket loop raised %s (%s)", str(e), type(e).__name__)
+                    self._set_disconnected()
+                finally:
+                    self._wsapp = None
+                if self._stop or session.closed:
+                    break
+                _LOGGER.warning("connect: websocket closed, reconnecting in %s seconds", RECONNECT_SECONDS)
+                await asyncio.sleep(RECONNECT_SECONDS)
+        finally:
+            if own_session and session is not None:
+                await session.close()
+
+    async def _receive(self, ws):
+        while True:
+            message = await ws.receive(timeout=CONST_RECEIVE_TIMEOUT_SECONDS)
+            if message.type in (aiohttp.WSMsgType.TEXT, aiohttp.WSMsgType.BINARY):
+                self.__on_message(ws, message.data)
+                if self._close_requested:
+                    await ws.close()
+                    self.__on_close(ws, ws.close_code, None)
+                    return
+            elif message.type == aiohttp.WSMsgType.ERROR:
+                self.__on_error(ws, message.data)
+                return
+            elif message.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSING, aiohttp.WSMsgType.CLOSED):
+                self.__on_close(ws, ws.close_code, None)
+                return
 
     def _set_disconnected(self):
         """Mark the socket down and notify the property listener."""
@@ -373,22 +509,29 @@ class Wattpilot(object):
 
 
     def send_update(self,name,value):
+        """Send a new property value; schedules the send on the running event loop."""
+        task = asyncio.get_running_loop().create_task(self.async_send_update(name,value))
+        self._send_tasks.add(task)
+        task.add_done_callback(self._send_done)
+
+    def _send_done(self,task):
+        self._send_tasks.discard(task)
+        if not task.cancelled() and task.exception() is not None:
+            _LOGGER.error("send_update: sending failed: %s", str(task.exception()))
+
+    async def async_send_update(self,name,value):
+        """Send a new property value to the charger; raises ConnectionError when not connected."""
         message = {}
         message["type"]="setValue"
         self.__requestid = self.__requestid+1
         message["requestId"]=self.__requestid
         message["key"]=name
         message["value"]=value
-        if (self._secured is not None):
-            if  (self._secured > 0):
-                self.__send(message,True)
-            else:
-                self.__send(message)
-        else:
-            self.__send(message)
+        await self.__send(message, self._secured is not None and self._secured > 0)
 
     def __update_property(self,name,value):
 
+        value = _namespace(value)
         self._allProps[name] = value
         if name=="acs":
             self._AccessState = _translate(Wattpilot.acsValues, value)
@@ -456,124 +599,66 @@ class Wattpilot(object):
             self._property_callback(name,value)
 
     def __on_hello(self,message):
-        _LOGGER.info("Connected to WattPilot Serial %s",message.serial)
-        if hasattr(message,"hostname"):
-            self._name=message.hostname
-        self.serial = message.serial
-        if hasattr(message,"hostname"):
-            self._hostname=message.hostname
-        if hasattr(message,"version"):
-            self._version=message.version
-        self._manufacturer=message.manufacturer
-        self._devicetype=message.devicetype
-        self._protocol=message.protocol
-        if hasattr(message,"secured"):
-            self._secured=message.secured
+        _LOGGER.info("Connected to WattPilot Serial %s",message["serial"])
+        if "hostname" in message:
+            self._name=message["hostname"]
+        self.serial = message["serial"]
+        if "hostname" in message:
+            self._hostname=message["hostname"]
+        if "version" in message:
+            self._version=message["version"]
+        self._manufacturer=message.get("manufacturer")
+        self._devicetype=message.get("devicetype")
+        self._protocol=message.get("protocol")
+        if "secured" in message:
+            self._secured=message["secured"]
 
     def __on_auth(self,wsapp,message):
+        task = asyncio.get_running_loop().create_task(self._async_auth(wsapp,message))
+        self._send_tasks.add(task)
+        task.add_done_callback(self._auth_done)
+
+    def _auth_done(self,task):
+        self._send_tasks.discard(task)
+        if not task.cancelled() and task.exception() is not None:
+            _LOGGER.error("__on_auth: authentication failed: %s", str(task.exception()))
+
+    async def _async_auth(self,wsapp,message):
         ran = random.randrange(10**80)
         self._token3 = "%064x" % ran
         self._token3 = self._token3[:32]
-        if hasattr(message,'hash'):
-            self._authhashtype = message.hash
+        if "hash" in message:
+            self._authhashtype = message["hash"]
         elif self._devicetype == CONST_WPFLEX_DEVICETYPE:
             self._authhashtype = CONST_HASH_BCRYPT
-        self.__update_hashedpassword()
-        hash1 = hashlib.sha256((message.token1.encode()+self._hashedpassword)).hexdigest()
-        hash = hashlib.sha256((self._token3 + message.token2+hash1).encode()).hexdigest()
+        await self.__update_hashedpassword()
+        hash1 = hashlib.sha256((message["token1"].encode()+self._hashedpassword)).hexdigest()
+        hash = hashlib.sha256((self._token3 + message["token2"]+hash1).encode()).hexdigest()
         response = {}
         response["type"] = "auth"
         response["token3"] = self._token3
         response["hash"] = hash
 
-        self.__send(response)
+        await self.__send(response, ws=wsapp)
 
-    def __update_hashedpassword(self,password=None,serial=None):
-        if password is None:
-            password = self._password
-        if serial is None:
-            serial = self._serial        
+    async def __update_hashedpassword(self):
+        password = self._password
+        serial = self._serial
         if (password is None) or (serial is None):
             _LOGGER.info("__update_hashedpassword: password or serial empty - keep current _hashedpassword")
             return
+        key = (password, serial, self._authhashtype)
+        if self._hashedpasswordkey == key:
+            return
         _LOGGER.debug("__update_hashedpassword: generating password hash of type: %s", self._authhashtype)
-        if self._authhashtype == CONST_HASH_PBKDF2:
-            self._hashedpassword = base64.b64encode(hashlib.pbkdf2_hmac('sha512',password.encode(),self.serial.encode(),100000,256))[:32]
-        elif self._authhashtype == CONST_HASH_BCRYPT:
-            hashedpw = self.__bcrypt_hash_password(password, serial)
-            self._hashedpassword = hashedpw.encode()
-        else:
-           _LOGGER.error("__update_hashedpassword: unknown authhashtype: %s", self._authhashtype)
+        try:
+            self._hashedpassword = await asyncio.get_running_loop().run_in_executor(None, _hash_password, password, serial, self._authhashtype)
+        except ValueError as e:
+            _LOGGER.error("__update_hashedpassword: %s", str(e))
+            return
+        self._hashedpasswordkey = key
 
-    def __bcryptjs_base64_encode(self,b: bytes, length: int) -> str:
-        #manual implementation of javascript bcrypt.encodeBase64 function
-        #encodeBase64 from https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L1133C17-L1133C29
-        #base64_encode from https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L427
-        #BASE64_CODE from: https://github.com/dcodeIO/bcrypt.js/blob/28e510389374f5736c447395443d4a6687325048/index.js#L402C1-L403C80
-        BASE64_CODE = list("./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")        
-        off = 0
-        rs = []
-        
-        if length <= 0 or length > len(b):
-            raise ValueError(f"Illegal len: {length}")
-            
-        while off < length:
-            c1 = b[off] & 0xff
-            off += 1
-            rs.append(BASE64_CODE[(c1 >> 2) & 0x3f])
-            c1 = (c1 & 0x03) << 4
-            if off >= length:
-                rs.append(BASE64_CODE[c1 & 0x3f])
-                break
-
-            c2 = b[off] & 0xff
-            off += 1
-            c1 |= (c2 >> 4) & 0x0f
-            rs.append(BASE64_CODE[c1 & 0x3f])
-            c1 = (c2 & 0x0f) << 2
-            if off >= length:
-                rs.append(BASE64_CODE[c1 & 0x3f])
-                break
-
-            c2 = b[off] & 0xff
-            off += 1
-            c1 |= (c2 >> 6) & 0x03
-            rs.append(BASE64_CODE[c1 & 0x3f])
-            rs.append(BASE64_CODE[c2 & 0x3f])
-
-        return "".join(rs)
-
-    def __bcryptjs_encodeBase64(self,s: str, length: int) -> str:
-        #helper wrapper function for __bcryptjs_base64_encode
-        #ensures python & java encoding is handled equally
-        if s.isdigit(): #numeric only serial
-            vals = [ord(ch) - ord('0') for ch in s]
-            b = bytes([0] * (length - len(vals)) + vals)
-        else: #not sure about serials in future - fallback
-            _LOGGER.error("__bcryptjs_encodeBase64: check serial string - should be digits only: %s", s)
-            raise ValueError(f"Check serial string - should be digits only: %s", s)
-        return self.__bcryptjs_base64_encode(b,length)
-     
-    def __bcrypt_hash_password(self,password,serial,iterations=8) -> str:
-        #hash bassword bcrypt / wattpilot flex compatible
-        password_hash_sha256 = hashlib.sha256(password.encode('utf-8')).hexdigest()
-        serial_b64 = self.__bcryptjs_encodeBase64(serial, 16)
-        salt = []
-        salt.append("$2a$")
-        if (iterations < 10):
-            salt.append("0")
-        salt.append(str(iterations))
-        salt.append("$")
-        salt.append(serial_b64)
-        salt=''.join(salt)
-        bsalt = salt.encode("utf-8")
-        bpassword = password_hash_sha256.encode('utf-8')
-        pwhash = bcrypt.hashpw(bpassword, bsalt)
-        salt_length = len(salt)
-        pwhash_sub = pwhash[salt_length:].decode('ascii')
-        return pwhash_sub
-
-    def __send(self,message,secure=False):
+    async def __send(self,message,secure=False,ws=None):
         # If the  connection to wattpilot is over a unsecure channel (http) all send messages are wrapped in
         # a "securedMsg" Message which contains the original messageobject and a sha256 HMAC Hashed created
         # using the password
@@ -587,30 +672,36 @@ class Wattpilot(object):
             message["requestId"]=str(messageid)+"sm"
             message["hmac"]=h.hexdigest()
 
-        _LOGGER.debug("Message send: %s",json.dumps(message)  )
-        self._wsapp.send(json.dumps(message))
+        if ws is None:
+            ws = self._wsapp
+        if ws is None or ws.closed:
+            raise ConnectionError("websocket not connected")
+        payload = json.dumps(message)
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug("Message send: %s", _mask_secrets(payload))
+        await ws.send_str(payload)
 
     def __on_AuthSuccess(self,message):
         self._connected = True
         _LOGGER.info("Authentication successful")
 
     def __on_FullStatus(self,message):
-        props = message.status.__dict__
+        props = message["status"]
         for key in props:
             self.__update_property(key,props[key])
-        if hasattr(message,'partial') and not self._allPropsInitialized:
-            self._allPropsInitialized = not message.partial
+        if "partial" in message and not self._allPropsInitialized:
+            self._allPropsInitialized = not message["partial"]
         else:
             self.__allPropsInitializedFallback=True
 
     def __on_AuthError(self,message):
-        if message.message=="Wrong password":
-            self._wsapp.close()
-            _LOGGER.error("Authentication failed: %s" , message.message)
+        if message.get("message")=="Wrong password":
+            self._close_requested = True
+            _LOGGER.error("Authentication failed: %s", message.get("message"))
 
     def __on_DeltaStatus(self,message):
         self._allPropsInitialized=True # Assume all properties have been initialized when first delta status is received
-        props = message.status.__dict__
+        props = message["status"]
         for key in props:
             self.__update_property(key,props[key])
 
@@ -621,25 +712,21 @@ class Wattpilot(object):
         pass
 
     def __on_response(self,message):
-        if message.success:
-            if hasattr(message,'status'):
-                props = message.status.__dict__
+        if message.get("success"):
+            if "status" in message:
+                props = message["status"]
                 for key in props:
                     self.__update_property(key,props[key])
         else:
-            _LOGGER.error("Error Sending Request %s. Message: %s" ,getattr(message,'requestId',None),getattr(message,'message',message))
+            _LOGGER.error("Error Sending Request %s. Message: %s", message.get("requestId"), message.get("message", message))
 
     def __on_error(self,wsapp,err):
         # reconnection is owned by connect()
         _LOGGER.warning("__on_error: charger websocket error: %s", err)
         self._set_disconnected()
 
-    def __on_open(self,wsapp):
-        if self._stop:
-            wsapp.close()
-
     def __on_close(self,wsapp,code,msg):
-        # notify here, not in connect(): run_forever(reconnect=...) never returns
+        # notify here: the websocket task reconnects on its own
         _LOGGER.warning("__on_close: charger websocket closed (code=%s)", code)
         self._set_disconnected()
 
@@ -648,35 +735,41 @@ class Wattpilot(object):
         try:
             if _LOGGER.isEnabledFor(logging.DEBUG):
                 _LOGGER.debug("Message received: %s", _mask_secrets(message))
-            msg=json.loads(message, object_hook=lambda d: SimpleNamespace(**d))
-            if (msg.type == 'hello'):  # Hello Message -> Received upon connection before auth
+            msg=json.loads(message)
+            msg_type = msg.get("type")
+            if (msg_type == 'hello'):  # Hello Message -> Received upon connection before auth
                 self.__on_hello(msg)
-            if (msg.type == 'authRequired'): # Auth Required -> Received after hello 
+            if (msg_type == 'authRequired'): # Auth Required -> Received after hello 
                 self.__on_auth(wsapp,msg)
-            if (msg.type == 'response'): # Response Message -> Received after sending a update and contains result of update
+            if (msg_type == 'response'): # Response Message -> Received after sending a update and contains result of update
                 self.__on_response(msg)
-            if (msg.type == 'authSuccess'): #Auth Success -> Received after sending  correct authentication message
+            if (msg_type == 'authSuccess'): #Auth Success -> Received after sending  correct authentication message
                 self.__on_AuthSuccess(msg)
-            if (msg.type == 'authError'): # AUth errot -> Received after sending incorrect authentication message (e.g. wrong password)
+            if (msg_type == 'authError'): # AUth errot -> Received after sending incorrect authentication message (e.g. wrong password)
                 self.__on_AuthError(msg)
-            if (msg.type == 'fullStatus'): #Full Status -> Received after successfull connection. Contains all Properties of Wattpilot
+            if (msg_type == 'fullStatus'): #Full Status -> Received after successfull connection. Contains all Properties of Wattpilot
                 self.__on_FullStatus(msg)
-            if (msg.type == 'deltaStatus'): # Delta Status -> Whenever a property changes a Delta Status is send
+            if (msg_type == 'deltaStatus'): # Delta Status -> Whenever a property changes a Delta Status is send
                 self.__on_DeltaStatus(msg)
-            if (msg.type == 'clearInverters'): # Unknown
+            if (msg_type == 'clearInverters'): # Unknown
                 self.__on_clearInverters(msg)
-            if (msg.type == 'updateInverter'): # Contains information of connected Photovoltaik inverter / powermeter
+            if (msg_type == 'updateInverter'): # Contains information of connected Photovoltaik inverter / powermeter
                 self.__on_updateInverter(msg)
             if self._message_callback != None:
-                self._message_callback(self,wsapp,msg,message)
+                self._message_callback(self,wsapp,_namespace(msg),message)
         except Exception as e:
             _LOGGER.warning("__on_message: failed to process message: %s (%s)", str(e), type(e).__name__)
 
 
-    def __init__(self, ip ,password,serial=None,cloud=False):
-        RECONNECTINTERVALL = 30
-
+    def __init__(self, ip ,password,serial=None,cloud=False,session=None):
         self.__requestid=0
+        self._session = session
+        self._task = None
+        self._stop = False
+        self._wsapp = None
+        self._close_requested = False
+        self._send_tasks = set()
+        self._hashedpasswordkey = None
         self._name = None
         self._hostname = None
         self._friendlyName = None
@@ -691,8 +784,10 @@ class Wattpilot(object):
 
         if(cloud):
             self._url= "wss://app.wattpilot.io/app/" + serial + "?version=1.2.9"
+            self._origin = "https://app.wattpilot.io"
         else:
             self._url = "ws://"+ip+"/ws"
+            self._origin = "http://"+ip
         self.serial = None
         self._connected = False
         self._allProps={}
@@ -722,9 +817,5 @@ class Wattpilot(object):
         self._message_callback=None
         self._property_callback=None
 
-        self._wst=threading.Thread()
-
-        websocket.setdefaulttimeout(10)
-        self._wsapp = websocket.WebSocketApp(self.url, on_open=self.__on_open, on_message=self.__on_message, on_error=self.__on_error, on_close=self.__on_close)
         _LOGGER.info ("Wattpilot %s initilized",self.serial)
 

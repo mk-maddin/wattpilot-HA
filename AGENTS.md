@@ -78,6 +78,17 @@ Because the external library is developed only sporadically, the integration con
 custom_components/wattpilot/wattpilot/
 ```
 
+#### Internal Wattpilot Package Runtime Model
+
+- The internal package runs one asyncio task per charger on Home Assistant's event loop, using aiohttp and the client session the integration passes in.
+  - `connect()`, `send_update()` and `disconnect()` need a running event loop; prefer `async_send_update()` and `async_disconnect()` from integration code.
+  - Property callbacks run inline on the event loop while a message is parsed; keep them short and never block in them.
+  - Rationale: the previous websocket-client thread handed every property update to the event loop with `run_coroutine_threadsafe` (about twenty a second for two chargers) and shared state across threads. Running on the loop removes the thread and the cross-thread handoff; a blocking callback would now stall Home Assistant instead of only the websocket thread.
+- Keep the package compatible with the aiohttp version of the oldest Home Assistant release in `hacs.json`. Do not use `aiohttp.ClientWSTimeout` or the websocket response as an async context manager; read with `ws.receive(timeout=...)` and close in `finally`.
+  - Rationale: `ClientWSTimeout` exists from aiohttp 3.11 (Home Assistant 2024.12) and `ClientWebSocketResponse` is not an async context manager in aiohttp 3.9 (Home Assistant 2024.4). Either one made the charger never connect on older installs, which the unit tests on current aiohttp did not show.
+- Do not log the charger object with `%s`; log `charger.name`.
+  - Rationale: `Wattpilot.__str__` formats `power` and raises while `nrg` has not arrived. Under pytest the logging error propagated and aborted `async_DisconnectCharger` before it disconnected, which left the websocket task running.
+
 #### Internal Wattpilot Package Versioning
 
 - Changes within the internal Wattpilot Python package at
