@@ -392,9 +392,9 @@ class ChargerPlatformEntity(Entity):
             elif self._source == 'namespacelist':
                 state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = state[int(self._namespace_id)]
-                _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, state)
+                _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, vars(state) | {"name": "***"} if self._identifier == "cards" and hasattr(state, "name") else state)
                 state = await self._async_update_validate_property(state)
-                _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, state)
+                _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, vars(state) | {"name": "***"} if self._identifier == "cards" and hasattr(state, "name") else state)
             elif self._source == 'property':
                 state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = await self._async_update_validate_property(state)

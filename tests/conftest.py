@@ -131,6 +131,7 @@ def _stub_const():
     m = _stub_module("custom_components.wattpilot.const",
         ATTR_ONLY_WRITE_INTERVAL=60,
         CONF_CHARGER="charger",
+        CARD_NAME_PROPERTIES=frozenset(f"c{index}n" for index in range(10)),
         CONF_CONNECTION="connection",
         CONF_CLOUD="cloud",
         CONF_DBG_PROPS="debug_properties",
