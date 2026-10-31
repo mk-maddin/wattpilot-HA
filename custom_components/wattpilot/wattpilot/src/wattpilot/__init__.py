@@ -23,7 +23,9 @@ CONST_CONNECT_TIMEOUT_SECONDS = 10
 
 # pushed through the property callback when the socket drops
 CONST_CONNECTION_SENTINEL = '__wattpilot_connection__'
-CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc')
+CONST_CARD_NAME_PROPERTIES = tuple(f'c{index}n' for index in range(10))
+CONST_CARD_FIELDS = {'n': 'name', 'e': 'energy', 'i': 'cardId'}
+CONST_SECRET_PROPERTIES = ('cak', 'ocppck', 'ocppcc', 'ocppsc') + CONST_CARD_NAME_PROPERTIES
 CONST_SECRET_PATTERN = re.compile(r'("(?:' + '|'.join(CONST_SECRET_PROPERTIES) + r')"\s*:\s*)"(?:[^"\\]|\\.)*"')
 __version__ = '0.2.2i'
 
@@ -184,6 +186,19 @@ class Wattpilot(object):
     @property
     def allProps(self):
         """Returns a dictionary with all properties"""
+        if "cards" in self._allProps:
+            return self._allProps
+        cards = []
+        has_card_fields = False
+        for index in range(10):
+            fields = {f"c{index}{suffix}": attribute for suffix, attribute in CONST_CARD_FIELDS.items()}
+            has_card_fields = has_card_fields or any(key in self._allProps for key in fields)
+            if all(key in self._allProps and self._allProps[key] is not None for key in fields):
+                cards.append(SimpleNamespace(**{attribute: self._allProps[key] for key, attribute in fields.items()}))
+            else:
+                cards.append(None)
+        if has_card_fields:
+            return {**self._allProps, "cards": cards}
         return self._allProps
 
     @property
@@ -510,6 +525,7 @@ class Wattpilot(object):
 
     def send_update(self,name,value):
         """Send a new property value; schedules the send on the running event loop."""
+        self._check_writable(name)
         task = asyncio.get_running_loop().create_task(self.async_send_update(name,value))
         self._send_tasks.add(task)
         task.add_done_callback(self._send_done)
@@ -519,8 +535,13 @@ class Wattpilot(object):
         if not task.cancelled() and task.exception() is not None:
             _LOGGER.error("send_update: sending failed: %s", str(task.exception()))
 
+    def _check_writable(self,name):
+        if name == "cards" and "cards" not in self._allProps and "cards" in self.allProps:
+            raise ValueError("The compatibility cards view is read-only")
+
     async def async_send_update(self,name,value):
         """Send a new property value to the charger; raises ConnectionError when not connected."""
+        self._check_writable(name)
         message = {}
         message["type"]="setValue"
         self.__requestid = self.__requestid+1

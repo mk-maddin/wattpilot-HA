@@ -18,6 +18,7 @@ from homeassistant.const import (
 )
 
 from .const import (
+    CARD_NAME_PROPERTIES,
     CONF_CHARGER,
     DOMAIN,
 )
@@ -27,7 +28,7 @@ from .utils import (
 )
 
 REDACT_CONFIG = {CONF_IP_ADDRESS, CONF_PASSWORD}
-REDACT_ALLPROPS = {'wifis', 'scan', 'data', 'dll', 'cak', 'ocppck', 'ocppcc', 'ocppsc', 'cards' }
+REDACT_ALLPROPS = {'wifis', 'scan', 'data', 'dll', 'cak', 'ocppck', 'ocppcc', 'ocppsc', 'cards' } | CARD_NAME_PROPERTIES
 
 _LOGGER: Final = logging.getLogger(__name__)
 platform='diagnostics'

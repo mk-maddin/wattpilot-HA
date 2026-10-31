@@ -20,9 +20,12 @@ CONF_PUSH_ENTITIES: Final = 'push_entities'
 CONF_SERIAL: Final = 'serial'
 
 DEFAULT_TIMEOUT: Final = 15
+ATTR_ONLY_WRITE_INTERVAL: Final = 60
 
 EVENT_PROPS_ID: Final = DOMAIN + '_property_message'
 EVENT_PROPS: Final = ["ftt", "cak"]
 
 CLOUD_API_URL_PREFIX: Final = 'https://'
 CLOUD_API_URL_POSTFIX: Final = '.api.v3.go-e.io/api/'
+
+CARD_NAME_PROPERTIES: Final = frozenset(f"c{index}n" for index in range(10))

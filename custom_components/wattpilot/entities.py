@@ -5,6 +5,7 @@ from typing import Final
 import logging
 import asyncio
 import re
+import time
 from packaging.version import Version
 
 from homeassistant.core import HomeAssistant
@@ -21,6 +22,7 @@ from homeassistant.const import (
 )
 
 from .const import (
+    ATTR_ONLY_WRITE_INTERVAL,
     CONF_CONNECTION,
     DEFAULT_NAME,
     DOMAIN,
@@ -40,6 +42,7 @@ class ChargerPlatformEntity(Entity):
     # Attributes change with every update (e.g. per-phase voltages on Charging Power,
     # ~1/s while charging) and would create a new state_attributes row each time.
     _unrecorded_attributes = frozenset({MATCH_ALL})
+    _last_write = None
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, entity_cfg, charger) -> None:
         """Initialize the object."""
@@ -367,6 +370,17 @@ class ChargerPlatformEntity(Entity):
         return state
 
 
+    def _write_state(self, state) -> None:
+        """Set the new state and write it, throttling writes where only attributes changed"""
+        now = time.monotonic()
+        if (state == getattr(self, self._state_attr, None) and self._last_write is not None
+                and now - self._last_write < ATTR_ONLY_WRITE_INTERVAL):
+            return None
+        setattr(self, self._state_attr, state)
+        self._last_write = now
+        self.async_write_ha_state()
+
+
     async def async_local_poll(self) -> None:
         """Async: Poll the latest data and states from the entity."""
         try:
@@ -378,17 +392,16 @@ class ChargerPlatformEntity(Entity):
             elif self._source == 'namespacelist':
                 state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = state[int(self._namespace_id)]
-                _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, state)
+                _LOGGER.debug("%s - %s: async_local_poll namespace pre validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, vars(state) | {"name": "***"} if self._identifier == "cards" and hasattr(state, "name") else state)
                 state = await self._async_update_validate_property(state)
-                _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, state)
+                _LOGGER.debug("%s - %s: async_local_poll namespace post validate state of %s: %s", self._charger_id, self._identifier, self._attr_unique_id, vars(state) | {"name": "***"} if self._identifier == "cards" and hasattr(state, "name") else state)
             elif self._source == 'property':
                 state = await async_GetChargerProp(self._charger,self._identifier,self._default_state)
                 state = await self._async_update_validate_property(state)
            
             state = await self._async_update_validate_platform_state(state)
             if not state is None:
-                setattr(self, self._state_attr, state)
-                self.async_write_ha_state()
+                self._write_state(state)
             #_LOGGER.debug("%s - %s: async_local_poll complete: %s", self._charger_id, self._identifier, state)
         except Exception as e:
             _LOGGER.error("%s - %s: async_local_poll failed: %s (%s.%s)", self._charger_id, self._identifier, str(e), e.__class__.__module__, type(e).__name__)
@@ -410,8 +423,7 @@ class ChargerPlatformEntity(Entity):
             
             state = await self._async_update_validate_platform_state(state)
             if not state is None:
-                setattr(self, self._state_attr, state)
-                self.async_write_ha_state()
+                self._write_state(state)
                 #_LOGGER.debug("%s - %s: async_local_push complete: %s", self._charger_id, self._identifier, state)
             else:
                 await self.hass.async_create_task(self.async_local_poll())                
