@@ -1,3 +1,4 @@
+import asyncio
 import cmd
 import json
 import logging
@@ -12,7 +13,7 @@ import pkgutil
 
 from importlib.metadata import version
 from time import sleep
-from threading import Event
+from threading import Event, Thread
 from types import SimpleNamespace
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,11 +99,26 @@ def wp_read_apidef():
     return wpdef
 
 
+_wp_loop = None
+
+
+def wp_loop():
+    global _wp_loop
+    if _wp_loop is None:
+        _wp_loop = asyncio.new_event_loop()
+        Thread(target=_wp_loop.run_forever, name="wattpilot-loop", daemon=True).start()
+    return _wp_loop
+
+
+def wp_send_update(name, value):
+    asyncio.run_coroutine_threadsafe(wp.async_send_update(name, value), wp_loop()).result(WATTPILOT_CONNECT_TIMEOUT)
+
+
 def wp_initialize(host, password):
     global wp
     # Connect to Wattpilot:
     wp = wattpilot.Wattpilot(host, password)
-    wp.connect()
+    wp_loop().call_soon_threadsafe(wp.connect)
     # Wait for connection and initialization:
     utils_wait_timeout(lambda: wp.connected, WATTPILOT_CONNECT_TIMEOUT) or exit(
         "ERROR: Timeout while connecting to Wattpilot!")
@@ -475,7 +491,7 @@ Usage: set <propName> <value>"""
                 v = float(args[1])
             else:
                 v = str(args[1])
-            wp.send_update(args[0], mqtt_get_decoded_property(
+            wp_send_update(args[0], mqtt_get_decoded_property(
                 wpdef["properties"][args[0]], v))
 
     def complete_set(self, text, line, begidx, endidx):
@@ -827,7 +843,7 @@ def mqtt_set_value(client, userdata, message):
         pd, str(message.payload.decode("utf-8")))
     _LOGGER.info(
         f"MQTT Message received: topic={message.topic}, name={name}, value={value}")
-    wp.send_update(name, value)
+    wp_send_update(name, value)
 
 
 def mqtt_get_watched_properties(wp):
