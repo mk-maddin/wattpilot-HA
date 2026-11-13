@@ -4,3 +4,5 @@ pytest-asyncio>=0.23
 pyyaml>=5.3.0
 packaging>=24.0
 aiofiles>=23.2.1
+aiohttp>=3.9
+bcrypt>=4.0

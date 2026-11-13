@@ -61,17 +61,26 @@ def test_legacy_cards_are_preserved(wp):
     assert native[0].name == "Legacy card"
 
 
-def test_derived_cards_cannot_be_sent(wp):
+def _socket(wp):
+    wp._wsapp = mock.Mock(closed=False, send_str=mock.AsyncMock())
+    return wp._wsapp
+
+
+async def test_derived_cards_cannot_be_sent(wp):
+    socket = _socket(wp)
     _receive(wp, {"c0n": "Test card", "c0e": 0, "c0i": False})
     with pytest.raises(ValueError, match="read-only"):
         wp.send_update("cards", [])
-    wp._wsapp.send.assert_not_called()
+    with pytest.raises(ValueError, match="read-only"):
+        await wp.async_send_update("cards", [])
+    socket.send_str.assert_not_called()
 
 
-def test_native_cards_write_path_is_unchanged(wp):
+async def test_native_cards_write_path_is_unchanged(wp):
+    socket = _socket(wp)
     _receive(wp, {"cards": []})
-    wp.send_update("cards", [])
-    assert json.loads(wp._wsapp.send.call_args.args[0])["key"] == "cards"
+    await wp.async_send_update("cards", [])
+    assert json.loads(socket.send_str.call_args.args[0])["key"] == "cards"
 
 
 def test_raw_callbacks_are_preserved(wp):

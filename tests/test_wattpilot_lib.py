@@ -12,8 +12,8 @@ ROOT = pathlib.Path(__file__).parent.parent
 
 
 def _load_lib():
-    """Load the internal library file under a private name with websocket and bcrypt stubbed."""
-    stubs = {"websocket": mock.MagicMock(), "bcrypt": mock.MagicMock()}
+    """Load the internal library file under a private name with aiohttp and bcrypt stubbed."""
+    stubs = {"aiohttp": mock.MagicMock(), "bcrypt": mock.MagicMock()}
     with mock.patch.dict(sys.modules, stubs):
         spec = importlib.util.spec_from_file_location(
             "wattpilot_internal_lib",
@@ -98,3 +98,29 @@ class TestSecretMasking:
         msg = {"type": "deltaStatus", "status": {"cak": self.SECRET}}
         wp._Wattpilot__on_message(None, json.dumps(msg))
         assert wp.cak == self.SECRET
+
+
+class TestNamespaceValues:
+
+    def test_object_values_become_namespaces(self, wp):
+        msg = {"type": "deltaStatus", "status": {"cards": [{"name": "a", "energy": 1}], "nrg": [230, 231, 229, 0, 1, 2, 3, 100, 200, 300, 0, 600], "amp": 16}}
+        wp._Wattpilot__on_message(None, json.dumps(msg))
+        assert wp.allProps["cards"][0].name == "a"
+        assert str(wp.allProps["cards"][0]).startswith("namespace")
+        assert wp.allProps["nrg"][11] == 600
+        assert wp.allProps["amp"] == 16
+
+    def test_nested_object_value_becomes_namespace(self, wp):
+        msg = {"type": "deltaStatus", "status": {"ftt": {"val": 3, "ts": 7}}}
+        wp._Wattpilot__on_message(None, json.dumps(msg))
+        assert wp.allProps["ftt"].val == 3
+
+
+class TestNoEventLoopBlocking:
+
+    def test_setting_password_and_serial_does_not_hash(self, lib):
+        with mock.patch.object(lib, "_hash_password") as hashing:
+            wp = lib.Wattpilot(ip="192.0.2.1", password="secret")
+            wp.serial = "12345678"
+            wp.password = "other"
+        hashing.assert_not_called()
